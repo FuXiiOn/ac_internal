@@ -122,7 +122,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 
 		ImGui::SetNextWindowSize(cheatSize);
 
-		ImGui::Begin("ghostface - Assault Cube Internal", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Venom - Assault Cube Internal", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
 		if (ImGui::BeginTabBar("main cheat")) {
 			if (ImGui::BeginTabItem("Aimbot")) {
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "soon :)");
