@@ -1,2 +1,2 @@
-[!NOTE]
-Recommend using ManualMap method injection to avoid crashes upon uninjecting.
+> [!NOTE]
+> Useful information that users should know, even when skimming content.
