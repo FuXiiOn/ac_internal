@@ -89,6 +89,9 @@ void __declspec(naked)myFunct() {
 	}
 }
 
+typedef int(__cdecl* _printIngame)(const char* format, ...);
+_printIngame printIngame = (_printIngame)(0x4090f0);
+
 typedef BOOL(__stdcall* t_wglSwapBuffers)(HDC hDc);
 t_wglSwapBuffers gateway_wglSwapBuffers;
 
@@ -229,6 +232,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	DetourAttach(&(PVOID&)gateway_wglSwapBuffers, hooked_wglSwapBuffers);
 	DetourTransactionCommit();
 
+	printIngame("\f8Venom injected!");
+
 	while (true) {
 
 		if (GetAsyncKeyState(VK_END) & 1)
@@ -281,6 +286,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 		}
 	}
+
+		printIngame("\f8Venom uninjected!");
 
 		DetourTransactionBegin();
 		DetourUpdateThread(GetCurrentThread());
