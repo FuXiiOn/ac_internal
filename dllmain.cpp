@@ -150,7 +150,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 					Config::savedZpos = localPlayer->playerpos.z;
 				}
 				if (ImGui::Button("Teleport to saved coordinates")) {
-					if (Config::savedXpos != NULL && Config::savedYpos != NULL && Config::savedZpos != NULL) {
+					if (Config::savedXpos != NULL && Config::savedYpos != NULL) {
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.x)), (BYTE*)(&(Config::savedXpos)), 4);
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.y)), (BYTE*)(&(Config::savedYpos)), 4);
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.z)), (BYTE*)(&(Config::savedZpos)), 4);
@@ -249,11 +249,12 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			mem::Patch((BYTE*)(moduleBase + 0x63786), (BYTE*)"\x50\x8D\x4C\x24\x1C\x51\x8B\xCE\xFF\xD2", 10);
 		}
 
-		DWORD hookAddress = (moduleBase + 0x5AC24);
-		int hookLength = 5;
-		jmpBackAddy = hookAddress + hookLength;
-
 		if (Config::bFly) {
+
+			DWORD hookAddress = (moduleBase + 0x5AC24);
+			int hookLength = 5;
+			jmpBackAddy = hookAddress + hookLength;
+
 			mem::Hook((void*)hookAddress, myFunct, hookLength);
 		}
 		else {
