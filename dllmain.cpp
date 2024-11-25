@@ -150,7 +150,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 					Config::savedZpos = localPlayer->playerpos.z;
 				}
 				if (ImGui::Button("Teleport to saved coordinates")) {
-					if (Config::savedXpos != NULL && Config::savedYpos != NULL) {
+					if (Config::savedXpos != 0.0 && Config::savedYpos != 0.0) {
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.x)), (BYTE*)(&(Config::savedXpos)), 4);
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.y)), (BYTE*)(&(Config::savedYpos)), 4);
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.z)), (BYTE*)(&(Config::savedZpos)), 4);
