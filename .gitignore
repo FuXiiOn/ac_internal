@@ -1,16 +1,4 @@
 
-acVenom/Release/stdafx.asm
-acVenom/Release/mem.obj
-acVenom/Release/mem.asm
-acVenom/Release/imgui_widgets.obj
-acVenom/Release/imgui_widgets.asm
-acVenom/Release/imgui_impl_win32.obj
-acVenom/Release/imgui_impl_win32.asm
-acVenom/Release/imgui_impl_opengl2.obj
-acVenom/Release/imgui_impl_opengl2.asm
-acVenom/Release/imgui_draw.obj
-acVenom/Release/imgui_draw.asm
-acVenom/Release/imgui_demo.asm
 /.vs
 /acVenom
 Project1.vcxproj
@@ -18,3 +6,4 @@ Project1.vcxproj.filters
 Project1.vcxproj.user
 Release/acVenom.dll
 Release/acVenom.pdb
+Project1.vcxproj.filters

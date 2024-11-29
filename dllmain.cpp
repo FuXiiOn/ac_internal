@@ -248,11 +248,11 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 
 		if (Config::bRecoil && !recoilPatched) {
-			mem::Nop((BYTE*)(moduleBase + 0x63786), 10);
+			mem::Patch((BYTE*)(0x462020), (BYTE*)"\xC2\x08\x00", 3);
 			recoilPatched = true;
 		}
 		else if(!Config::bRecoil && recoilPatched) {
-			mem::Patch((BYTE*)(moduleBase + 0x63786), (BYTE*)"\x50\x8D\x4C\x24\x1C\x51\x8B\xCE\xFF\xD2", 10);
+			mem::Patch((BYTE*)(0x462020), (BYTE*)"\x55\x8B\xEC", 3);
 			recoilPatched = false;
 		}
 
