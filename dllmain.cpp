@@ -150,7 +150,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 					Config::savedZpos = localPlayer->playerpos.z;
 				}
 				if (ImGui::Button("Teleport to saved coordinates")) {
-					if (Config::savedXpos != NULL && Config::savedYpos != NULL && Config::savedZpos != NULL) {
+					if (Config::savedXpos != NULL && Config::savedYpos != NULL) {
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.x)), (BYTE*)(&(Config::savedXpos)), 4);
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.y)), (BYTE*)(&(Config::savedYpos)), 4);
 						mem::Patch((BYTE*)(&(localPlayer->playerpos.z)), (BYTE*)(&(Config::savedZpos)), 4);
@@ -194,6 +194,12 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
 
 	entList* entityList = *(entList**)(moduleBase + 0x010F4F8);
+
+	bool recoilPatched = false;
+	bool flyPatched = false;
+	bool rapidPatched = false;
+	bool onehitPatched = false;
+
 
 	char windowTitle[] = "AssaultCube";
 	HWND hwnd = FindWindowA(NULL, windowTitle);
@@ -241,39 +247,46 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			break;
 		}
 
-		if (Config::bRecoil)
-		{
+		if (Config::bRecoil && !recoilPatched) {
 			mem::Nop((BYTE*)(moduleBase + 0x63786), 10);
+			recoilPatched = true;
 		}
-		else {
+		else if(!Config::bRecoil && recoilPatched) {
 			mem::Patch((BYTE*)(moduleBase + 0x63786), (BYTE*)"\x50\x8D\x4C\x24\x1C\x51\x8B\xCE\xFF\xD2", 10);
+			recoilPatched = false;
 		}
 
 		DWORD hookAddress = (moduleBase + 0x5AC24);
 		int hookLength = 5;
 		jmpBackAddy = hookAddress + hookLength;
 
-		if (Config::bFly) {
+		if (Config::bFly && !flyPatched) {
 			mem::Hook((void*)hookAddress, myFunct, hookLength);
+			flyPatched = true;
 		}
-		else {
+		else if(!Config::bFly && flyPatched) {
 			mem::Patch((BYTE*)(moduleBase + 0x5AC24), (BYTE*)"\x33\xC0", 2);
 			mem::Patch((BYTE*)(moduleBase + 0x5AC26), (BYTE*)"\x88\x47\x69", 3);
+			flyPatched = false;
 		}
 
-		if (Config::bRapidFire) {
+		if (Config::bRapidFire && !rapidPatched) {
 			mem::Nop((BYTE*)(moduleBase + 0x637E4), 2);
+			rapidPatched = true;
 		}
-		else {
+		else if(!Config::bRapidFire && rapidPatched) {
 			mem::Patch((BYTE*)(moduleBase + 0x637E4), (BYTE*)"\x89\x0A", 2);
+			rapidPatched = false;
 		}
 
-		if (Config::bOneHit) {
+		if (Config::bOneHit && !onehitPatched) {
 			mem::Patch((BYTE*)(moduleBase + 0x29D1F), (BYTE*)"\x83\x6B\x04\x64", 4);
 			mem::Patch((BYTE*)(moduleBase + 0x29D23), (BYTE*)("\x90"), 1);
+			onehitPatched = true;
 		}
-		else {
+		else if(!Config::bOneHit && onehitPatched) {
 			mem::Patch((BYTE*)(moduleBase + 0x29D1F), (BYTE*)"\x29\x7B\x04", 3);
+			onehitPatched = false;
 		}
 
 		if (localPlayer) {
