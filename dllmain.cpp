@@ -80,15 +80,6 @@ public:
 	};
 };
 
-DWORD jmpBackAddy;
-void __declspec(naked)myFunct() {
-	__asm {
-		mov al, 1
-		mov[edi + 69], al
-		jmp[jmpBackAddy]
-	}
-}
-
 typedef int(__cdecl* _printIngame)(const char* format, ...);
 _printIngame printIngame = (_printIngame)(0x4090f0);
 
@@ -256,20 +247,15 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			recoilPatched = false;
 		}
 
-		DWORD hookAddress = (moduleBase + 0x5AC24);
-		int hookLength = 5;
-		jmpBackAddy = hookAddress + hookLength;
-
 		if (Config::bFly && !flyPatched) {
-			mem::Hook((void*)hookAddress, myFunct, hookLength);
+			*(int*)mem::FindDMAAddy((0x50F4F4), { 0x338 }) = 5;
 			flyPatched = true;
 		}
 		else if(!Config::bFly && flyPatched) {
-			mem::Patch((BYTE*)(moduleBase + 0x5AC24), (BYTE*)"\x33\xC0", 2);
-			mem::Patch((BYTE*)(moduleBase + 0x5AC26), (BYTE*)"\x88\x47\x69", 3);
+			*(int*)mem::FindDMAAddy((0x50F4F4), { 0x338 }) = 0;
 			flyPatched = false;
 		}
-
+	
 		if (Config::bRapidFire && !rapidPatched) {
 			mem::Nop((BYTE*)(moduleBase + 0x637E4), 2);
 			rapidPatched = true;
