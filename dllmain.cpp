@@ -134,7 +134,6 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 				ImGui::Checkbox("Fly Hack", &Config::bFly);
 				ImGui::Checkbox("Rapid Fire", &Config::bRapidFire);
 				ImGui::Checkbox("OneTap Exploit", &Config::bOneHit);
-				ImGui::SameLine(); IconHelpMarker("[-] Also applies to bots");
 				if (ImGui::Button("Save current coordinates")) {
 					Config::savedXpos = localPlayer->playerpos.x;
 					Config::savedYpos = localPlayer->playerpos.y;
