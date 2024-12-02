@@ -191,7 +191,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	bool rapidPatched = false;
 	bool onehitPatched = false;
 
-
 	char windowTitle[] = "AssaultCube";
 	HWND hwnd = FindWindowA(NULL, windowTitle);
 
@@ -265,14 +264,23 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			rapidPatched = false;
 		}
 
-		if (Config::bOneHit && !onehitPatched) {
-			mem::Patch((BYTE*)(moduleBase + 0x29D1F), (BYTE*)"\x83\x6B\x04\x64", 4);
-			mem::Patch((BYTE*)(moduleBase + 0x29D23), (BYTE*)("\x90"), 1);
+		if (Config::bOneHit) {
+			*(int*)mem::FindDMAAddy(0x50F4F4, { 0x374, 0xC, 0x10C }) = 999;
 			onehitPatched = true;
 		}
 		else if(!Config::bOneHit && onehitPatched) {
-			mem::Patch((BYTE*)(moduleBase + 0x29D1F), (BYTE*)"\x29\x7B\x04", 3);
-			onehitPatched = false;
+			char weaponIdentifier[5];
+			uintptr_t identifierAddr = mem::FindDMAAddy(0x50F4F4, { 0x374, 0xC, 0x0 });
+
+			memcpy(weaponIdentifier, (char*)identifierAddr, 4);
+			weaponIdentifier[4] = '\0';
+
+			if (strcmp(weaponIdentifier, "assa") == 0) {
+				*(int*)mem::FindDMAAddy(0x50F4F4, { 0x374, 0xC, 0x10C }) = 22;
+			}
+			else if (strcmp(weaponIdentifier, "pist") == 0) {
+				*(int*)mem::FindDMAAddy(0x50F4F4, { 0x374, 0xC, 0x10C }) = 18;
+			}
 		}
 
 		if (localPlayer) {
