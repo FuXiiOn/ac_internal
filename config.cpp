@@ -10,6 +10,9 @@ bool Config::bOneHit = false;
 bool Config::bRapidFire = false;
 bool Config::bRecoil = false;
 bool Config::bTp = false;
+bool Config::bAimbot = false;
+bool Config::bEsp = false;
+bool Config::bTriggerbot = false;
 
 float Config::savedXpos = 0.0f;
 float Config::savedYpos = 0.0f;

@@ -14,11 +14,7 @@
 #include "detours.h"
 #include "geom.h"
 #include <algorithm>
-
-#define STR_MERGE_IMPL(a, b) a##b
-#define STR_MERGE(a, b) STR_MERGE_IMPL(a, b)
-#define MAKE_PAD(size) STR_MERGE(_pad, __COUNTER__)[size]
-#define DEFINE_MEMBER_N(type, name, offset) struct {unsigned char MAKE_PAD(offset); type name;}
+#include "offsets.h"
 
 typedef enum {
 	SDL_GRAB_QUERY,
@@ -28,60 +24,11 @@ typedef enum {
 typedef BOOL(__cdecl* t_SDL_WM_GrabInput)(SDL_GrabMode mode);
 t_SDL_WM_GrabInput	_SDL_WM_GrabInput;
 
-struct Vector3 { float x, y, z; };
-
-class ent
-{
-public:
-	union {
-		DEFINE_MEMBER_N(Vector3, headpos, 0x4);
-		DEFINE_MEMBER_N(Vector3, velocity, 0x0010);
-		DEFINE_MEMBER_N(int, health, 0xF8);
-		DEFINE_MEMBER_N(int, armor, 0xFC);
-		DEFINE_MEMBER_N(Vector3, playerpos, 0x0034);
-	};
-};
-
-class entList
-{
-public:
-	union {
-		DEFINE_MEMBER_N(ent*, ent1, 0x0004);
-		DEFINE_MEMBER_N(ent*, ent2, 0x0008);
-		DEFINE_MEMBER_N(ent*, ent3, 0x000C);
-		DEFINE_MEMBER_N(ent*, ent4, 0x0010);
-		DEFINE_MEMBER_N(ent*, ent5, 0x0014);
-		DEFINE_MEMBER_N(ent*, ent6, 0x0018);
-		DEFINE_MEMBER_N(ent*, ent7, 0x001C);
-		DEFINE_MEMBER_N(ent*, ent8, 0x0020);
-		DEFINE_MEMBER_N(ent*, ent9, 0x0024);
-		DEFINE_MEMBER_N(ent*, ent10, 0x0028);
-		DEFINE_MEMBER_N(ent*, ent11, 0x002C);
-		DEFINE_MEMBER_N(ent*, ent12, 0x0030);
-		DEFINE_MEMBER_N(ent*, ent13, 0x0034);
-		DEFINE_MEMBER_N(ent*, ent14, 0x0038);
-		DEFINE_MEMBER_N(ent*, ent15, 0x003C);
-		DEFINE_MEMBER_N(ent*, ent16, 0x0040);
-		DEFINE_MEMBER_N(ent*, ent17, 0x0044);
-		DEFINE_MEMBER_N(ent*, ent18, 0x0048);
-		DEFINE_MEMBER_N(ent*, ent19, 0x004C);
-		DEFINE_MEMBER_N(ent*, ent20, 0x0050);
-		DEFINE_MEMBER_N(ent*, ent21, 0x0054);
-		DEFINE_MEMBER_N(ent*, ent22, 0x0058);
-		DEFINE_MEMBER_N(ent*, ent23, 0x005C);
-		DEFINE_MEMBER_N(ent*, ent24, 0x0060);
-		DEFINE_MEMBER_N(ent*, ent25, 0x0064);
-		DEFINE_MEMBER_N(ent*, ent26, 0x0068);
-		DEFINE_MEMBER_N(ent*, ent27, 0x006C);
-		DEFINE_MEMBER_N(ent*, ent28, 0x0070);
-		DEFINE_MEMBER_N(ent*, ent29, 0x0074);
-		DEFINE_MEMBER_N(ent*, ent30, 0x0078);
-		DEFINE_MEMBER_N(ent*, ent31, 0x007C);
-	};
-};
-
 typedef int(__cdecl* _printIngame)(const char* format, ...);
 _printIngame printIngame = (_printIngame)(0x4090f0);
+
+typedef ent* (__cdecl* _GetCrosshairEnt)();
+_GetCrosshairEnt getCrosshairEnt = nullptr;
 
 typedef BOOL(__stdcall* t_wglSwapBuffers)(HDC hDc);
 t_wglSwapBuffers gateway_wglSwapBuffers;
@@ -119,6 +66,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 		ImGui::Begin("Venom - Assault Cube Internal", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
 		if (ImGui::BeginTabBar("main cheat")) {
 			if (ImGui::BeginTabItem("Aimbot")) {
+				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "soon :)");
 				ImGui::EndTabItem();
 			}
@@ -129,24 +77,24 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			if (ImGui::BeginTabItem("Exploits"))
 			{
 				ImGui::Checkbox("GodMode", &Config::bHealth);
-				ImGui::Checkbox("Inf Ammo", &Config::bAmmo);
 				ImGui::Checkbox("No Recoil", &Config::bRecoil);
+				ImGui::Checkbox("Inf Ammo", &Config::bAmmo);
 				ImGui::Checkbox("Fly Hack", &Config::bFly);
 				ImGui::Checkbox("Rapid Fire", &Config::bRapidFire);
 				ImGui::Checkbox("OneTap Exploit", &Config::bOneHit);
 				if (ImGui::Button("Save current coordinates")) {
-					Config::savedXpos = localPlayer->playerpos.x;
-					Config::savedYpos = localPlayer->playerpos.y;
-					Config::savedZpos = localPlayer->playerpos.z;
+					Config::savedXpos = localPlayer->bodypos.x;
+					Config::savedYpos = localPlayer->bodypos.y;
+					Config::savedZpos = localPlayer->bodypos.z;
 				}
 				if (ImGui::Button("Teleport to saved coordinates")) {
 					if (Config::savedXpos != NULL && Config::savedYpos != NULL) {
-						mem::Patch((BYTE*)(&(localPlayer->playerpos.x)), (BYTE*)(&(Config::savedXpos)), 4);
-						mem::Patch((BYTE*)(&(localPlayer->playerpos.y)), (BYTE*)(&(Config::savedYpos)), 4);
-						mem::Patch((BYTE*)(&(localPlayer->playerpos.z)), (BYTE*)(&(Config::savedZpos)), 4);
+						mem::Patch((BYTE*)(&(localPlayer->bodypos.x)), (BYTE*)(&(Config::savedXpos)), 4);
+						mem::Patch((BYTE*)(&(localPlayer->bodypos.y)), (BYTE*)(&(Config::savedYpos)), 4);
+						mem::Patch((BYTE*)(&(localPlayer->bodypos.z)), (BYTE*)(&(Config::savedZpos)), 4);
 					}
 				}
-				ImGui::Text("CURRENT COORDS - X: %.2f Y: %.2f Z: %.2f", localPlayer->playerpos.x, localPlayer->playerpos.y, localPlayer->playerpos.z);
+				ImGui::Text("CURRENT COORDS - X: %.2f Y: %.2f Z: %.2f", localPlayer->bodypos.x, localPlayer->bodypos.y, localPlayer->bodypos.z);
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
@@ -180,6 +128,8 @@ LRESULT __stdcall WndProc(const HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 DWORD WINAPI HackThread(HMODULE hModule) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
 	moduleBase = (uintptr_t)GetModuleHandle(NULL);
+
+	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
 
 	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
 
@@ -288,7 +238,26 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 
 			if (Config::bAmmo) {
-				*(int*)mem::FindDMAAddy(moduleBase + 0x10F4F4, { 0x374, 0x14, 0x0 }) = 999;
+				localPlayer->currWeapon->ammoPtr->ammoClip = 999;
+			}
+
+			if (Config::bTriggerbot) {
+				ent* crosshairEnt = getCrosshairEnt();
+
+				if (crosshairEnt) {
+					if (localPlayer->team != crosshairEnt->team) {
+						localPlayer->bAttack = 1;
+					}
+				}
+				else if (crosshairEnt && !GetAsyncKeyState(VK_LBUTTON)) {
+					localPlayer->bAttack = 0;
+				}
+				else {
+					localPlayer->bAttack = 0;
+				}
+				if (GetAsyncKeyState(VK_LBUTTON)) {
+					localPlayer->bAttack = 1;
+				}
 			}
 		}
 	}

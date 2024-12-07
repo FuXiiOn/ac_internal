@@ -9,6 +9,10 @@ namespace Config {
 	extern bool bRapidFire;
 	extern bool bOneHit;
 	extern bool bTp;
+	extern bool bAimbot;
+	extern bool bAimbotVisOnly;
+	extern bool bEsp;
+	extern bool bTriggerbot;
 
 	extern float savedXpos;
 	extern float savedYpos;
