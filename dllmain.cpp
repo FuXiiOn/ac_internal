@@ -249,9 +249,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 						localPlayer->bAttack = 1;
 					}
 				}
-				else if (crosshairEnt && !GetAsyncKeyState(VK_LBUTTON)) {
-					localPlayer->bAttack = 0;
-				}
 				else {
 					localPlayer->bAttack = 0;
 				}
