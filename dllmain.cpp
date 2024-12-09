@@ -74,13 +74,14 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "soon :)");
 				ImGui::EndTabItem();
 			}
-			if (ImGui::BeginTabItem("Exploits"))
+			if (ImGui::BeginTabItem("Misc"))
 			{
 				ImGui::Checkbox("GodMode", &Config::bHealth);
 				ImGui::Checkbox("No Recoil", &Config::bRecoil);
 				ImGui::Checkbox("Inf Ammo", &Config::bAmmo);
 				ImGui::Checkbox("Fly Hack", &Config::bFly);
 				ImGui::Checkbox("Rapid Fire", &Config::bRapidFire);
+				ImGui::Checkbox("BunnyHop", &Config::bBunnyhop);
 				ImGui::Checkbox("OneTap Exploit", &Config::bOneHit);
 				if (ImGui::Button("Save current coordinates")) {
 					Config::savedXpos = localPlayer->bodypos.x;
@@ -184,6 +185,16 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		if (GetAsyncKeyState(VK_END) & 1)
 		{
 			break;
+		}
+
+		if (Config::bBunnyhop) {
+			uintptr_t isGround = mem::FindDMAAddy((uintptr_t)(moduleBase + 0x10F4F4), { 0x68 });
+
+			if(GetAsyncKeyState(VK_SPACE) && *(int*)isGround == 256) {
+				SendMessageA(hwnd, WM_KEYDOWN, VK_SPACE, 0x20);
+				Sleep(1);
+				SendMessageA(hwnd, WM_KEYUP, VK_SPACE, 0x20);
+			}
 		}
 
 		if (Config::bRecoil && !recoilPatched) {

@@ -13,6 +13,7 @@ namespace Config {
 	extern bool bAimbotVisOnly;
 	extern bool bEsp;
 	extern bool bTriggerbot;
+	extern bool bBunnyhop;
 
 	extern float savedXpos;
 	extern float savedYpos;
