@@ -33,6 +33,10 @@ _GetCrosshairEnt getCrosshairEnt = nullptr;
 typedef BOOL(__stdcall* t_wglSwapBuffers)(HDC hDc);
 t_wglSwapBuffers gateway_wglSwapBuffers;
 
+const char* items[] = { "FFA", "TEAM" };
+static int triggerbot_selected = 0;
+const char* combo_preview_value = items[triggerbot_selected];
+
 BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
 	moduleBase = (uintptr_t)GetModuleHandle(NULL);
@@ -67,6 +71,23 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 		if (ImGui::BeginTabBar("main cheat")) {
 			if (ImGui::BeginTabItem("Aimbot")) {
 				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
+				if (Config::bTriggerbot) {
+					if (ImGui::BeginCombo("Attack Settings", combo_preview_value, 0))
+					{
+						for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+						{
+							const bool is_selected = (triggerbot_selected == n);
+							if (ImGui::Selectable(items[n], is_selected)) {
+								triggerbot_selected = n;
+								combo_preview_value = items[triggerbot_selected];
+							}
+
+							if (is_selected)
+								ImGui::SetItemDefaultFocus();
+						}
+						ImGui::EndCombo();
+					}
+				}
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "soon :)");
 				ImGui::EndTabItem();
 			}
@@ -255,16 +276,29 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			if (Config::bTriggerbot) {
 				ent* crosshairEnt = getCrosshairEnt();
 
-				if (crosshairEnt) {
-					if (localPlayer->team != crosshairEnt->team) {
+				if (triggerbot_selected == 1) {
+					if (crosshairEnt) {
+						if (localPlayer->team != crosshairEnt->team) {
+							localPlayer->bAttack = 1;
+						}
+					}
+					else {
+						localPlayer->bAttack = 0;
+					}
+					if (GetAsyncKeyState(VK_LBUTTON)) {
 						localPlayer->bAttack = 1;
 					}
 				}
 				else {
-					localPlayer->bAttack = 0;
-				}
-				if (GetAsyncKeyState(VK_LBUTTON)) {
-					localPlayer->bAttack = 1;
+					if (crosshairEnt) {
+						localPlayer->bAttack = 1;
+					}
+					else {
+						localPlayer->bAttack = 0;
+					}
+					if (GetAsyncKeyState(VK_LBUTTON)) {
+						localPlayer->bAttack = 1;
+					}
 				}
 			}
 		}
