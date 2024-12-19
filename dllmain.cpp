@@ -154,6 +154,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
 
 	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
+	uintptr_t localPlayerPtr = *(uintptr_t*)(moduleBase + 0x10F4F4);
 
 	entList* entityList = *(entList**)(moduleBase + 0x010F4F8);
 
@@ -209,7 +210,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 
 		if (Config::bBunnyhop) {
-			uintptr_t isGround = mem::FindDMAAddy((uintptr_t)(moduleBase + 0x10F4F4), { 0x68 });
+			uintptr_t isGround = localPlayerPtr + 0x68;
 
 			if(GetAsyncKeyState(VK_SPACE) && *(int*)isGround == 256) {
 				SendMessageA(hwnd, WM_KEYDOWN, VK_SPACE, 0x20);
@@ -228,11 +229,11 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 
 		if (Config::bFly && !flyPatched) {
-			*(int*)mem::FindDMAAddy((0x50F4F4), { 0x338 }) = 5;
+			*(int*)(*(uintptr_t*)0x50F4F4 + 0x338) = 5;
 			flyPatched = true;
 		}
 		else if(!Config::bFly && flyPatched) {
-			*(int*)mem::FindDMAAddy((0x50F4F4), { 0x338 }) = 0;
+			*(int*)(*(uintptr_t*)0x50F4F4 + 0x338) = 0;
 			flyPatched = false;
 		}
 	
