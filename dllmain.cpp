@@ -209,6 +209,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			break;
 		}
 
+		if (!localPlayer) continue;
+
 		if (Config::bBunnyhop) {
 			uintptr_t isGround = localPlayerPtr + 0x68;
 
@@ -265,41 +267,39 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 		}
 
-		if (localPlayer) {
-			if (Config::bHealth) {
-				localPlayer->health = rand() % 899 + 100;
-			}
+		if (Config::bHealth) {
+			localPlayer->health = rand() % 899 + 100;
+		}
 
-			if (Config::bAmmo) {
-				localPlayer->currWeapon->ammoPtr->ammoClip = 999;
-			}
+		if (Config::bAmmo) {
+			localPlayer->currWeapon->ammoPtr->ammoClip = 999;
+		}
 
-			if (Config::bTriggerbot) {
-				ent* crosshairEnt = getCrosshairEnt();
+		if (Config::bTriggerbot) {
+			ent* crosshairEnt = getCrosshairEnt();
 
-				if (triggerbot_selected == 1) {
-					if (crosshairEnt) {
-						if (localPlayer->team != crosshairEnt->team) {
-							localPlayer->bAttack = 1;
-						}
-					}
-					else {
-						localPlayer->bAttack = 0;
-					}
-					if (GetAsyncKeyState(VK_LBUTTON)) {
+			if (triggerbot_selected == 1) {
+				if (crosshairEnt) {
+					if (localPlayer->team != crosshairEnt->team) {
 						localPlayer->bAttack = 1;
 					}
 				}
 				else {
-					if (crosshairEnt) {
-						localPlayer->bAttack = 1;
-					}
-					else {
-						localPlayer->bAttack = 0;
-					}
-					if (GetAsyncKeyState(VK_LBUTTON)) {
-						localPlayer->bAttack = 1;
-					}
+					localPlayer->bAttack = 0;
+				}
+				if (GetAsyncKeyState(VK_LBUTTON)) {
+					localPlayer->bAttack = 1;
+				}
+			}
+			else {
+				if (crosshairEnt) {
+					localPlayer->bAttack = 1;
+				}
+				else {
+					localPlayer->bAttack = 0;
+				}
+				if (GetAsyncKeyState(VK_LBUTTON)) {
+					localPlayer->bAttack = 1;
 				}
 			}
 		}
