@@ -6,7 +6,19 @@
 #define MAKE_PAD(size) STR_MERGE(_pad, __COUNTER__)[size]
 #define DEFINE_MEMBER_N(type, name, offset) struct {unsigned char MAKE_PAD(offset); type name;}
 
-struct Vector3 { float x, y, z; };
+struct Vector3 {
+	float x, y, z;
+
+	Vector3 operator+(Vector3 vec) {
+		return { x + vec.x, y + vec.y, z + vec.z };
+	}
+	Vector3 operator-(Vector3 vec) {
+		return { x - vec.x, y - vec.y, z - vec.z };
+	}
+	Vector3 operator*(Vector3 vec) {
+		return { x * vec.x, y * vec.y, z * vec.z };
+	}
+};
 
 class ent
 {

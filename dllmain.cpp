@@ -15,6 +15,8 @@
 #include "geom.h"
 #include <algorithm>
 #include "offsets.h"
+#include <cmath>
+#include <numbers>
 
 typedef enum {
 	SDL_GRAB_QUERY,
@@ -43,7 +45,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 
 	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
 
-	entList* entityList = *(entList**)(moduleBase + 0x010F4F8);
+	entList* entityList = *(entList**)(moduleBase + 0x10F4F8);
 
 	if (GetAsyncKeyState(VK_END) & 1)
 	{
@@ -69,7 +71,8 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 
 		ImGui::Begin("Venom - Assault Cube Internal", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
 		if (ImGui::BeginTabBar("main cheat")) {
-			if (ImGui::BeginTabItem("Aimbot")) {
+			if (ImGui::BeginTabItem("Aim")) {
+				ImGui::Checkbox("Aimbot", &Config::bAimbot);
 				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
 				if (Config::bTriggerbot) {
 					if (ImGui::BeginCombo("Attack Settings", combo_preview_value, 0))
@@ -88,7 +91,6 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 						ImGui::EndCombo();
 					}
 				}
-				ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "soon :)");
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("ESP")) {
@@ -117,6 +119,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 					}
 				}
 				ImGui::Text("CURRENT COORDS - X: %.2f Y: %.2f Z: %.2f", localPlayer->bodypos.x, localPlayer->bodypos.y, localPlayer->bodypos.z);
+				ImGui::Text("CURRENT YAW: %f PITCH: %f", localPlayer->angles.x, localPlayer->angles.y);
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
@@ -152,11 +155,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	moduleBase = (uintptr_t)GetModuleHandle(NULL);
 
 	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
-
-	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
-	uintptr_t localPlayerPtr = *(uintptr_t*)(moduleBase + 0x10F4F4);
-
-	entList* entityList = *(entList**)(moduleBase + 0x010F4F8);
 
 	bool recoilPatched = false;
 	bool flyPatched = false;
@@ -203,6 +201,11 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	printIngame("\f8Venom injected!");
 
 	while (true) {
+		ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
+		uintptr_t localPlayerPtr = *(uintptr_t*)(moduleBase + 0x10F4F4);
+		entList* entityList = *(entList**)(moduleBase + 0x010F4F8);
+		uintptr_t niggaList = *(uintptr_t*)(moduleBase + 0x10F4F8);
+		uintptr_t currPlayers = *(int*)(0x50F500);
 
 		if (GetAsyncKeyState(VK_END) & 1)
 		{
@@ -210,6 +213,36 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 
 		if (!localPlayer) continue;
+			
+		if (Config::bAimbot && niggaList) {
+			for (int i = 1; i < currPlayers; i++) {
+				uintptr_t entityObj = *(uintptr_t*)(niggaList + i * 0x4);
+				ent* entity = reinterpret_cast<ent*>(entityObj);
+
+				if (!entity) continue;
+				if (entity->health < 0) continue;
+				if (entity->team == localPlayer->team) continue;
+
+				float abspos_x = entity->bodypos.x - localPlayer->bodypos.x;
+				float abspos_y = entity->bodypos.y - localPlayer->bodypos.y;
+				float abspos_z = entity->bodypos.z - localPlayer->bodypos.z;
+
+				float azimuth_xy = atan2f(abspos_y, abspos_x);
+				float yaw = (float)(azimuth_xy * (180.0f / std::numbers::pi));
+
+				float azimuth_z = atan2f(abspos_z, std::hypot(abspos_x, abspos_y));
+				float pitch = (float)(azimuth_z * (180.0 / std::numbers::pi));
+
+
+				if (yaw > 360.0f) yaw -= 360.0f;
+				if (yaw < -360.0f) yaw += 360.0f;
+				if (pitch > 90.0f) yaw -= 90.0f;
+				if (pitch < -90.0f) yaw += 90.0f;
+
+				localPlayer->angles.x = yaw + 90;
+				localPlayer->angles.y = pitch;
+			}
+		}
 
 		if (Config::bBunnyhop) {
 			uintptr_t isGround = localPlayerPtr + 0x68;
