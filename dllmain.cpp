@@ -65,7 +65,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	if (Config::bMenu) {
 		_SDL_WM_GrabInput(SDL_GrabMode(2));
 
-		ImVec2 cheatSize = {350, 300};
+		ImVec2 cheatSize = { 350, 300 };
 
 		ImGui::SetNextWindowSize(cheatSize);
 
@@ -73,6 +73,9 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 		if (ImGui::BeginTabBar("main cheat")) {
 			if (ImGui::BeginTabItem("Aim")) {
 				ImGui::Checkbox("Aimbot", &Config::bAimbot);
+				if (Config::bAimbot) {
+					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 0.0f, 10.0f, "%.3f");
+				}
 				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
 				if (Config::bTriggerbot) {
 					if (ImGui::BeginCombo("Attack Settings", combo_preview_value, 0))
@@ -119,7 +122,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 					}
 				}
 				ImGui::Text("CURRENT COORDS - X: %.2f Y: %.2f Z: %.2f", localPlayer->bodypos.x, localPlayer->bodypos.y, localPlayer->bodypos.z);
-				ImGui::Text("CURRENT YAW: %f PITCH: %f", localPlayer->angles.x, localPlayer->angles.y);
+				ImGui::Text("CURRENT YAW: %f PITCH: %f", localPlayer->yaw, localPlayer->pitch);
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
@@ -207,47 +210,64 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		uintptr_t niggaList = *(uintptr_t*)(moduleBase + 0x10F4F8);
 		uintptr_t currPlayers = *(int*)(0x50F500);
 
+		float closestDistance = 10000000;
+		int closestDistanceIndex = -1;
+
 		if (GetAsyncKeyState(VK_END) & 1)
 		{
 			break;
 		}
 
 		if (!localPlayer) continue;
-			
+
 		if (Config::bAimbot && niggaList) {
-			for (int i = 1; i < currPlayers; i++) {
+			float closestDistance = FLT_MAX;
+			ent* closestEntity = nullptr;
+
+			for (int i = 0; i < currPlayers; i++) {
 				uintptr_t entityObj = *(uintptr_t*)(niggaList + i * 0x4);
 				ent* entity = reinterpret_cast<ent*>(entityObj);
 
 				if (!entity) continue;
-				if (entity->health < 0) continue;
-				if (entity->team == localPlayer->team) continue;
+				if (entity->health <= 0) continue;
 
-				float abspos_x = entity->bodypos.x - localPlayer->bodypos.x;
-				float abspos_y = entity->bodypos.y - localPlayer->bodypos.y;
-				float abspos_z = entity->bodypos.z - localPlayer->bodypos.z;
+				float deltaX = entity->bodypos.x - localPlayer->bodypos.x;
+				float deltaY = entity->bodypos.y - localPlayer->bodypos.y;
+				float deltaZ = entity->bodypos.z - localPlayer->bodypos.z;
+
+				float distance = std::sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+
+				if (distance < closestDistance) {
+					closestDistance = distance;
+					closestEntity = entity;
+				}
+			}
+
+			if (closestEntity) {
+				float abspos_x = closestEntity->bodypos.x - localPlayer->bodypos.x;
+				float abspos_y = closestEntity->bodypos.y - localPlayer->bodypos.y;
+				float abspos_z = closestEntity->bodypos.z - localPlayer->bodypos.z;
 
 				float azimuth_xy = atan2f(abspos_y, abspos_x);
 				float yaw = (float)(azimuth_xy * (180.0f / std::numbers::pi));
 
 				float azimuth_z = atan2f(abspos_z, std::hypot(abspos_x, abspos_y));
-				float pitch = (float)(azimuth_z * (180.0 / std::numbers::pi));
-
+				float pitch = (float)(azimuth_z * (180.0f / std::numbers::pi));
 
 				if (yaw > 360.0f) yaw -= 360.0f;
 				if (yaw < -360.0f) yaw += 360.0f;
-				if (pitch > 90.0f) yaw -= 90.0f;
-				if (pitch < -90.0f) yaw += 90.0f;
+				if (pitch > 90.0f) pitch = 90.0f;
+				if (pitch < -90.0f) pitch = -90.0f;
 
-				localPlayer->angles.x = yaw + 90;
-				localPlayer->angles.y = pitch;
+				localPlayer->yaw = yaw + 90;
+				localPlayer->pitch = pitch;
 			}
 		}
 
 		if (Config::bBunnyhop) {
 			uintptr_t isGround = localPlayerPtr + 0x68;
 
-			if(GetAsyncKeyState(VK_SPACE) && *(int*)isGround == 256) {
+			if (GetAsyncKeyState(VK_SPACE) && *(int*)isGround == 256) {
 				SendMessageA(hwnd, WM_KEYDOWN, VK_SPACE, 0x20);
 				Sleep(1);
 				SendMessageA(hwnd, WM_KEYUP, VK_SPACE, 0x20);
@@ -258,7 +278,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			mem::Patch((BYTE*)(0x462020), (BYTE*)"\xC2\x08\x00", 3);
 			recoilPatched = true;
 		}
-		else if(!Config::bRecoil && recoilPatched) {
+		else if (!Config::bRecoil && recoilPatched) {
 			mem::Patch((BYTE*)(0x462020), (BYTE*)"\x55\x8B\xEC", 3);
 			recoilPatched = false;
 		}
@@ -267,16 +287,16 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			*(int*)(*(uintptr_t*)0x50F4F4 + 0x338) = 5;
 			flyPatched = true;
 		}
-		else if(!Config::bFly && flyPatched) {
+		else if (!Config::bFly && flyPatched) {
 			*(int*)(*(uintptr_t*)0x50F4F4 + 0x338) = 0;
 			flyPatched = false;
 		}
-	
+
 		if (Config::bRapidFire && !rapidPatched) {
 			mem::Nop((BYTE*)(moduleBase + 0x637E4), 2);
 			rapidPatched = true;
 		}
-		else if(!Config::bRapidFire && rapidPatched) {
+		else if (!Config::bRapidFire && rapidPatched) {
 			mem::Patch((BYTE*)(moduleBase + 0x637E4), (BYTE*)"\x89\x0A", 2);
 			rapidPatched = false;
 		}
@@ -285,7 +305,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			*(int*)mem::FindDMAAddy(0x50F4F4, { 0x374, 0xC, 0x10C }) = 999;
 			onehitPatched = true;
 		}
-		else if(!Config::bOneHit && onehitPatched) {
+		else if (!Config::bOneHit && onehitPatched) {
 			char weaponIdentifier[5];
 			uintptr_t identifierAddr = mem::FindDMAAddy(0x50F4F4, { 0x374, 0xC, 0x0 });
 
@@ -338,18 +358,18 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 	}
 
-		printIngame("\f8Venom uninjected!");
+	printIngame("\f8Venom uninjected!");
 
-		DetourTransactionBegin();
-		DetourUpdateThread(GetCurrentThread());
-		DetourDetach(&(PVOID&)gateway_wglSwapBuffers, hooked_wglSwapBuffers);
-		DetourTransactionCommit();
+	DetourTransactionBegin();
+	DetourUpdateThread(GetCurrentThread());
+	DetourDetach(&(PVOID&)gateway_wglSwapBuffers, hooked_wglSwapBuffers);
+	DetourTransactionCommit();
 
-		ImGui_ImplOpenGL2_Shutdown();
-		ImGui_ImplWin32_Shutdown();
-		ImGui::DestroyContext();
+	ImGui_ImplOpenGL2_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 
-		FreeLibraryAndExitThread(hModule, 0);
+	FreeLibraryAndExitThread(hModule, 0);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)

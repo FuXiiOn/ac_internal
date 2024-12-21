@@ -2,9 +2,6 @@
 
 //NOT USING ALL OF THIS YET xd
 
-using Geom::Vector2;
-using Geom::Vector3;
-
 
 float Vector2::length()
 {
@@ -25,7 +22,7 @@ Vector2 Vector2::normalize()
 	return result;
 }
 
-Vector2 Geom::calcAngle(Vector3 posSrc, Vector3 posDst)
+Vector2 calcAngle(Vector3 posSrc, Vector3 posDst)
 {
 	Vector3 delta = posSrc - posDst;
 	

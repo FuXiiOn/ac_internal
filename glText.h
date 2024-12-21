@@ -7,8 +7,6 @@
 
 #include "geom.h"
 
-using Geom::Vector2;
-
 namespace GL
 {
 	class Font

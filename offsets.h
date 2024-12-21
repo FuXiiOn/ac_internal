@@ -1,24 +1,11 @@
 #pragma once
 #include <iostream>
 #include <windows.h>
+#include "geom.h"
 #define STR_MERGE_IMPL(a, b) a##b
 #define STR_MERGE(a, b) STR_MERGE_IMPL(a, b)
 #define MAKE_PAD(size) STR_MERGE(_pad, __COUNTER__)[size]
 #define DEFINE_MEMBER_N(type, name, offset) struct {unsigned char MAKE_PAD(offset); type name;}
-
-struct Vector3 {
-	float x, y, z;
-
-	Vector3 operator+(Vector3 vec) {
-		return { x + vec.x, y + vec.y, z + vec.z };
-	}
-	Vector3 operator-(Vector3 vec) {
-		return { x - vec.x, y - vec.y, z - vec.z };
-	}
-	Vector3 operator*(Vector3 vec) {
-		return { x * vec.x, y * vec.y, z * vec.z };
-	}
-};
 
 class ent
 {
@@ -27,7 +14,9 @@ public:
 	Vector3 headpos; //0x0004
 	char pad_0010[36]; //0x0010
 	Vector3 bodypos; //0x0034
-	Vector3 angles; //0x0040
+	float yaw; //0x0040
+	float pitch;
+	float x;
 	char pad_004C[172]; //0x004C
 	int32_t health; //0x00F8
 	char pad_00FC[296]; //0x00FC
