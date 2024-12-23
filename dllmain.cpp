@@ -227,8 +227,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			ent* closestEntity = nullptr;
 
 			static auto lastUpdateTime = std::chrono::steady_clock::now();
-			float currentYaw = localPlayer->yaw;
-			float currentPitch = localPlayer->pitch;
 
 			for (int i = 0; i < currPlayers; i++) {
 				uintptr_t entityObj = *(uintptr_t*)(niggaList + i * 0x4);
@@ -251,6 +249,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 
 			if (closestEntity) {
+				float currentYaw = localPlayer->yaw;
+				float currentPitch = localPlayer->pitch;
 				float abspos_x = closestEntity->bodypos.x - localPlayer->bodypos.x;
 				float abspos_y = closestEntity->bodypos.y - localPlayer->bodypos.y;
 				float abspos_z = closestEntity->bodypos.z - localPlayer->bodypos.z;
