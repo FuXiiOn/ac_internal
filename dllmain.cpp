@@ -262,7 +262,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				float targetPitch = azimuth_z * (180.0f / std::numbers::pi);
 
 				auto currentTime = std::chrono::steady_clock::now();
-				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(16)) {
+				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
 					float yawDiff = targetYaw + 90.0f - currentYaw;
 					if (yawDiff > 180.0f) yawDiff -= 360.0f;
 					if (yawDiff < -180.0f) yawDiff += 360.0f;
