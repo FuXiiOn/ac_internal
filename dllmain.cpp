@@ -163,6 +163,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	bool flyPatched = false;
 	bool rapidPatched = false;
 	bool onehitPatched = false;
+	bool isFFA = false;
 
 	char windowTitle[] = "AssaultCube";
 	HWND hwnd = FindWindowA(NULL, windowTitle);
@@ -209,6 +210,9 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		entList* entityList = *(entList**)(moduleBase + 0x010F4F8);
 		uintptr_t niggaList = *(uintptr_t*)(moduleBase + 0x10F4F8);
 		uintptr_t currPlayers = *(int*)(0x50F500);
+		uintptr_t gamemodeAddr = *(int*)(moduleBase + 0x10A044);
+
+		if (gamemodeAddr == 7 ? isFFA = true : isFFA = false);
 
 		float closestDistance = 10000000;
 		int closestDistanceIndex = -1;
@@ -230,6 +234,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 				if (!entity) continue;
 				if (entity->health <= 0) continue;
+				if (isFFA && entity->team == localPlayer->team) continue;
 
 				float deltaX = entity->bodypos.x - localPlayer->bodypos.x;
 				float deltaY = entity->bodypos.y - localPlayer->bodypos.y;
