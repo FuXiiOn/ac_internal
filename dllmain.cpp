@@ -74,7 +74,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			if (ImGui::BeginTabItem("Aim")) {
 				ImGui::Checkbox("Aimbot", &Config::bAimbot);
 				if (Config::bAimbot) {
-					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 0.1f, 1.0f, "%.3f");
+					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 1.0f, 0.1f, "%.3f");
 				}
 				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
 				if (Config::bTriggerbot) {
