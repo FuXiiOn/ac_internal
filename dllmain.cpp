@@ -74,7 +74,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			if (ImGui::BeginTabItem("Aim")) {
 				ImGui::Checkbox("Aimbot", &Config::bAimbot);
 				if (Config::bAimbot) {
-					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 1.0f, 0.1f, "%.3f");
+					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 0.0f, 1.0, "%.3f");
 				}
 				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
 				if (Config::bTriggerbot) {
@@ -267,8 +267,10 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 					if (yawDiff > 180.0f) yawDiff -= 360.0f;
 					if (yawDiff < -180.0f) yawDiff += 360.0f;
 
-					currentYaw += yawDiff * Config::aimbotSmooth;
-					currentPitch += (targetPitch - currentPitch) * Config::aimbotSmooth;
+					float smoothingFactor = 1.01f - Config::aimbotSmooth;
+
+					currentYaw += yawDiff * smoothingFactor;
+					currentPitch += (targetPitch - currentPitch) * smoothingFactor;
 
 					localPlayer->yaw = currentYaw;
 					localPlayer->pitch = currentPitch;
