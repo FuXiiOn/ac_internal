@@ -14,7 +14,7 @@ bool Config::bAimbot = false;
 bool Config::bEsp = false;
 bool Config::bTriggerbot = false;
 bool Config::bBunnyhop = false;
-float Config::aimbotSmooth = 0.0f;;
+float Config::aimbotSmooth = 0.1f;;
 
 float Config::savedXpos = 0.0f;
 float Config::savedYpos = 0.0f;

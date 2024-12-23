@@ -26,8 +26,8 @@ typedef enum {
 typedef BOOL(__cdecl* t_SDL_WM_GrabInput)(SDL_GrabMode mode);
 t_SDL_WM_GrabInput	_SDL_WM_GrabInput;
 
-typedef int(__cdecl* _printIngame)(const char* format, ...);
-_printIngame printIngame = (_printIngame)(0x4090f0);
+typedef int(__cdecl* _printInGame)(const char* format, ...);
+_printInGame printInGame = (_printInGame)(0x4090f0);
 
 typedef ent* (__cdecl* _GetCrosshairEnt)();
 _GetCrosshairEnt getCrosshairEnt = nullptr;
@@ -74,7 +74,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			if (ImGui::BeginTabItem("Aim")) {
 				ImGui::Checkbox("Aimbot", &Config::bAimbot);
 				if (Config::bAimbot) {
-					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 0.0f, 10.0f, "%.3f");
+					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 0.1f, 1.0f, "%.3f");
 				}
 				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
 				if (Config::bTriggerbot) {
@@ -202,7 +202,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	DetourAttach(&(PVOID&)gateway_wglSwapBuffers, hooked_wglSwapBuffers);
 	DetourTransactionCommit();
 
-	printIngame("\f8Venom injected!");
+	printInGame("\f8Venom injected!");
 
 	while (true) {
 		ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
@@ -214,9 +214,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 		if (gamemodeAddr == 7 ? isFFA = true : isFFA = false);
 
-		float closestDistance = 10000000;
-		int closestDistanceIndex = -1;
-
 		if (GetAsyncKeyState(VK_END) & 1)
 		{
 			break;
@@ -225,8 +222,13 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		if (!localPlayer) continue;
 
 		if (Config::bAimbot && niggaList) {
+			int closestDistanceIndex = -1;
 			float closestDistance = FLT_MAX;
 			ent* closestEntity = nullptr;
+
+			static auto lastUpdateTime = std::chrono::steady_clock::now();
+			float currentYaw = localPlayer->yaw;
+			float currentPitch = localPlayer->pitch;
 
 			for (int i = 0; i < currPlayers; i++) {
 				uintptr_t entityObj = *(uintptr_t*)(niggaList + i * 0x4);
@@ -254,18 +256,25 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				float abspos_z = closestEntity->bodypos.z - localPlayer->bodypos.z;
 
 				float azimuth_xy = atan2f(abspos_y, abspos_x);
-				float yaw = (float)(azimuth_xy * (180.0f / std::numbers::pi));
+				float targetYaw = azimuth_xy * (180.0f / std::numbers::pi);
 
 				float azimuth_z = atan2f(abspos_z, std::hypot(abspos_x, abspos_y));
-				float pitch = (float)(azimuth_z * (180.0f / std::numbers::pi));
+				float targetPitch = azimuth_z * (180.0f / std::numbers::pi);
 
-				if (yaw > 360.0f) yaw -= 360.0f;
-				if (yaw < -360.0f) yaw += 360.0f;
-				if (pitch > 90.0f) pitch = 90.0f;
-				if (pitch < -90.0f) pitch = -90.0f;
+				auto currentTime = std::chrono::steady_clock::now();
+				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(16)) {
+					float yawDiff = targetYaw + 90.0f - currentYaw;
+					if (yawDiff > 180.0f) yawDiff -= 360.0f;
+					if (yawDiff < -180.0f) yawDiff += 360.0f;
 
-				localPlayer->yaw = yaw + 90;
-				localPlayer->pitch = pitch;
+					currentYaw += yawDiff * Config::aimbotSmooth;
+					currentPitch += (targetPitch - currentPitch) * Config::aimbotSmooth;
+
+					localPlayer->yaw = currentYaw;
+					localPlayer->pitch = currentPitch;
+
+					lastUpdateTime = currentTime;
+				}
 			}
 		}
 
@@ -326,7 +335,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 
 		if (Config::bHealth) {
-			localPlayer->health = rand() % 899 + 100;
+			localPlayer->health = 999;
 		}
 
 		if (Config::bAmmo) {
@@ -363,7 +372,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 	}
 
-	printIngame("\f8Venom uninjected!");
+	printInGame("\f8Venom uninjected!");
 
 	DetourTransactionBegin();
 	DetourUpdateThread(GetCurrentThread());
