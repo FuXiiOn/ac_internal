@@ -222,8 +222,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		if (!localPlayer) continue;
 
 		if (Config::bAimbot && niggaList) {
-			int closestDistanceIndex = -1;
 			float closestDistance = FLT_MAX;
+			int closestDistanceIndex = -1;
 			ent* closestEntity = nullptr;
 
 			static auto lastUpdateTime = std::chrono::steady_clock::now();
@@ -266,8 +266,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 					float yawDiff = targetYaw + 90.0f - currentYaw;
 					if (yawDiff > 180.0f) yawDiff -= 360.0f;
 					if (yawDiff < -180.0f) yawDiff += 360.0f;
-
-					float smoothingFactor = 1.01f - Config::aimbotSmooth;
+					
+					float smoothingFactor = 1.1f - Config::aimbotSmooth;
 
 					currentYaw += yawDiff * smoothingFactor;
 					currentPitch += (targetPitch - currentPitch) * smoothingFactor;
