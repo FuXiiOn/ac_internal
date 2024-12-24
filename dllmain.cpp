@@ -173,14 +173,14 @@ bool IsVisible(ent*& entity) {
 	__asm {
 		push 0; bSkipTags
 		push 0; bCheckPlayers
-		push localPlayer
-		push to.z
-		push to.y
-		push to.x
-		push from.z
-		push from.y
-		push from.x
-		lea eax, [traceresult]
+		push localPlayer //a4
+		push to.z //vec3 dst
+		push to.y //vec3 dst
+		push to.x //vec3 dst
+		push from.z //vec3 src
+		push from.y //vec3 src
+		push from.x //vec3 src
+		lea eax, [traceresult] //a1<eax>
 		call traceLine;
 		add esp, 36
 	}
@@ -282,37 +282,39 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 
 			if (closestEntity) {
-				if (Config::bVisCheck) {
-					if (!IsVisible(closestEntity)) continue;
+				if (Config::bVisCheck && !IsVisible(closestEntity)) {
+					closestEntity = nullptr;
 				}
 
-				float currentYaw = localPlayer->yaw;
-				float currentPitch = localPlayer->pitch;
-				float abspos_x = closestEntity->bodypos.x - localPlayer->bodypos.x;
-				float abspos_y = closestEntity->bodypos.y - localPlayer->bodypos.y;
-				float abspos_z = closestEntity->bodypos.z - localPlayer->bodypos.z;
+				if (closestEntity) {
+					float currentYaw = localPlayer->yaw;
+					float currentPitch = localPlayer->pitch;
+					float abspos_x = closestEntity->bodypos.x - localPlayer->bodypos.x;
+					float abspos_y = closestEntity->bodypos.y - localPlayer->bodypos.y;
+					float abspos_z = closestEntity->bodypos.z - localPlayer->bodypos.z;
 
-				float azimuth_xy = atan2f(abspos_y, abspos_x);
-				float targetYaw = azimuth_xy * (180.0f / std::numbers::pi);
+					float azimuth_xy = atan2f(abspos_y, abspos_x);
+					float targetYaw = azimuth_xy * (180.0f / std::numbers::pi);
 
-				float azimuth_z = atan2f(abspos_z, std::hypot(abspos_x, abspos_y));
-				float targetPitch = azimuth_z * (180.0f / std::numbers::pi);
+					float azimuth_z = atan2f(abspos_z, std::hypot(abspos_x, abspos_y));
+					float targetPitch = azimuth_z * (180.0f / std::numbers::pi);
 
-				auto currentTime = std::chrono::steady_clock::now();
-				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
-					float yawDiff = targetYaw + 90.0f - currentYaw;
-					if (yawDiff > 180.0f) yawDiff -= 360.0f;
-					if (yawDiff < -180.0f) yawDiff += 360.0f;
-					
-					float smoothingFactor = 1.1f - Config::aimbotSmooth;
+					auto currentTime = std::chrono::steady_clock::now();
+					if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
+						float yawDiff = targetYaw + 90.0f - currentYaw;
+						if (yawDiff > 180.0f) yawDiff -= 360.0f;
+						if (yawDiff < -180.0f) yawDiff += 360.0f;
 
-					currentYaw += yawDiff * smoothingFactor;
-					currentPitch += (targetPitch - currentPitch) * smoothingFactor;
+						float smoothingFactor = 1.1f - Config::aimbotSmooth;
 
-					localPlayer->yaw = currentYaw;
-					localPlayer->pitch = currentPitch;
+						currentYaw += yawDiff * smoothingFactor;
+						currentPitch += (targetPitch - currentPitch) * smoothingFactor;
 
-					lastUpdateTime = currentTime;
+						localPlayer->yaw = currentYaw;
+						localPlayer->pitch = currentPitch;
+
+						lastUpdateTime = currentTime;
+					}
 				}
 			}
 		}
