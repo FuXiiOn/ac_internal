@@ -74,6 +74,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			if (ImGui::BeginTabItem("Aim")) {
 				ImGui::Checkbox("Aimbot", &Config::bAimbot);
 				if (Config::bAimbot) {
+					ImGui::Checkbox("Visible Check", &Config::bVisCheck);
 					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 0.0f, 1.0, "%.3f");
 				}
 				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
@@ -153,6 +154,39 @@ LRESULT __stdcall WndProc(const HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 	}
 }
 
+struct traceresult_s {
+	Vector3 end;
+	bool collided;
+};
+
+bool IsVisible(ent*& entity) {
+	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
+	moduleBase = (uintptr_t)GetModuleHandle(NULL);
+	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
+
+	uintptr_t traceLine = 0x048A310;
+	traceresult_s traceresult;
+	traceresult.collided = false;
+	Vector3 from = localPlayer->headpos;
+	Vector3 to = entity->headpos;
+
+	__asm {
+		push 0; bSkipTags
+		push 0; bCheckPlayers
+		push localPlayer
+		push to.z
+		push to.y
+		push to.x
+		push from.z
+		push from.y
+		push from.x
+		lea eax, [traceresult]
+		call traceLine;
+		add esp, 36
+	}
+	return !traceresult.collided;
+}
+
 DWORD WINAPI HackThread(HMODULE hModule) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
 	moduleBase = (uintptr_t)GetModuleHandle(NULL);
@@ -223,7 +257,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 		if (Config::bAimbot && niggaList) {
 			float closestDistance = FLT_MAX;
-			int closestDistanceIndex = -1;
 			ent* closestEntity = nullptr;
 
 			static auto lastUpdateTime = std::chrono::steady_clock::now();
@@ -249,6 +282,10 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 
 			if (closestEntity) {
+				if (Config::bVisCheck) {
+					if (!IsVisible(closestEntity)) continue;
+				}
+
 				float currentYaw = localPlayer->yaw;
 				float currentPitch = localPlayer->pitch;
 				float abspos_x = closestEntity->bodypos.x - localPlayer->bodypos.x;
