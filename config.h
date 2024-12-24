@@ -10,7 +10,6 @@ namespace Config {
 	extern bool bOneHit;
 	extern bool bTp;
 	extern bool bAimbot;
-	extern bool bAimbotVisOnly;
 	extern bool bEsp;
 	extern bool bTriggerbot;
 	extern bool bBunnyhop;

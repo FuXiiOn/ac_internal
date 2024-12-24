@@ -268,6 +268,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				if (!entity) continue;
 				if (entity->health <= 0) continue;
 				if (isFFA && entity->team == localPlayer->team) continue;
+				if (Config::bVisCheck && !IsVisible(entity)) continue;
 
 				float deltaX = entity->bodypos.x - localPlayer->bodypos.x;
 				float deltaY = entity->bodypos.y - localPlayer->bodypos.y;
@@ -282,39 +283,33 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 
 			if (closestEntity) {
-				if (Config::bVisCheck && !IsVisible(closestEntity)) {
-					closestEntity = nullptr;
-				}
+				float currentYaw = localPlayer->yaw;
+				float currentPitch = localPlayer->pitch;
+				float abspos_x = closestEntity->bodypos.x - localPlayer->bodypos.x;
+				float abspos_y = closestEntity->bodypos.y - localPlayer->bodypos.y;
+				float abspos_z = closestEntity->bodypos.z - localPlayer->bodypos.z;
 
-				if (closestEntity) {
-					float currentYaw = localPlayer->yaw;
-					float currentPitch = localPlayer->pitch;
-					float abspos_x = closestEntity->bodypos.x - localPlayer->bodypos.x;
-					float abspos_y = closestEntity->bodypos.y - localPlayer->bodypos.y;
-					float abspos_z = closestEntity->bodypos.z - localPlayer->bodypos.z;
+				float azimuth_xy = atan2f(abspos_y, abspos_x);
+				float targetYaw = azimuth_xy * (180.0f / std::numbers::pi);
 
-					float azimuth_xy = atan2f(abspos_y, abspos_x);
-					float targetYaw = azimuth_xy * (180.0f / std::numbers::pi);
+				float azimuth_z = atan2f(abspos_z, std::hypot(abspos_x, abspos_y));
+				float targetPitch = azimuth_z * (180.0f / std::numbers::pi);
 
-					float azimuth_z = atan2f(abspos_z, std::hypot(abspos_x, abspos_y));
-					float targetPitch = azimuth_z * (180.0f / std::numbers::pi);
+				auto currentTime = std::chrono::steady_clock::now();
+				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
+					float yawDiff = targetYaw + 90.0f - currentYaw;
+					if (yawDiff > 180.0f) yawDiff -= 360.0f;
+					if (yawDiff < -180.0f) yawDiff += 360.0f;
 
-					auto currentTime = std::chrono::steady_clock::now();
-					if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
-						float yawDiff = targetYaw + 90.0f - currentYaw;
-						if (yawDiff > 180.0f) yawDiff -= 360.0f;
-						if (yawDiff < -180.0f) yawDiff += 360.0f;
+					float smoothingFactor = 1.1f - Config::aimbotSmooth;
 
-						float smoothingFactor = 1.1f - Config::aimbotSmooth;
+					currentYaw += yawDiff * smoothingFactor;
+					currentPitch += (targetPitch - currentPitch) * smoothingFactor;
 
-						currentYaw += yawDiff * smoothingFactor;
-						currentPitch += (targetPitch - currentPitch) * smoothingFactor;
+					localPlayer->yaw = currentYaw;
+					localPlayer->pitch = currentPitch;
 
-						localPlayer->yaw = currentYaw;
-						localPlayer->pitch = currentPitch;
-
-						lastUpdateTime = currentTime;
-					}
+					lastUpdateTime = currentTime;
 				}
 			}
 		}
@@ -412,7 +407,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 		}
 	}
-
 	printInGame("\f8Venom uninjected!");
 
 	DetourTransactionBegin();
