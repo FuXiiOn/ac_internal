@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include <iostream>
 #include <gl/GL.h>
-#include "glText.h"
-#include "glDraw.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl2.h"
 #include "imgui/imgui_impl_win32.h"
