@@ -161,7 +161,6 @@ struct traceresult_s {
 
 bool IsVisible(ent*& entity) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
-	moduleBase = (uintptr_t)GetModuleHandle(NULL);
 	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
 
 	uintptr_t traceLine = 0x048A310;
@@ -171,8 +170,8 @@ bool IsVisible(ent*& entity) {
 	Vector3 to = entity->headpos;
 
 	__asm {
-		push 0; bSkipTags
-		push 0; bCheckPlayers
+		push 0; bSkipTags //a6 (unnecessary argument)
+		push 0; bCheckPlayers //a5 (unnecessary argument)
 		push localPlayer //a4
 		push to.z //vec3 dst
 		push to.y //vec3 dst
@@ -181,15 +180,14 @@ bool IsVisible(ent*& entity) {
 		push from.y //vec3 src
 		push from.x //vec3 src
 		lea eax, [traceresult] //a1<eax>
-		call traceLine;
-		add esp, 36
+		call traceLine
+		add esp, 36 //clean stack
 	}
 	return !traceresult.collided;
 }
 
 DWORD WINAPI HackThread(HMODULE hModule) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
-	moduleBase = (uintptr_t)GetModuleHandle(NULL);
 
 	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
 
@@ -316,11 +314,18 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 		if (Config::bBunnyhop) {
 			uintptr_t isGround = localPlayerPtr + 0x68;
+			uintptr_t isShifting = localPlayerPtr + 0x6C;
+			uintptr_t doJump = localPlayerPtr + 0x6B;
+			static bool jumpPatched = false;
 
 			if (GetAsyncKeyState(VK_SPACE) && *(int*)isGround == 256) {
-				SendMessageA(hwnd, WM_KEYDOWN, VK_SPACE, 0x20);
-				Sleep(1);
-				SendMessageA(hwnd, WM_KEYUP, VK_SPACE, 0x20);
+				*(int*)doJump = 1;
+				jumpPatched = true;
+			}
+
+			if (jumpPatched && *(int*)isGround == 256 && *(int*)doJump == 0) {
+				*(int*)doJump = 256;
+				jumpPatched = false;
 			}
 		}
 
