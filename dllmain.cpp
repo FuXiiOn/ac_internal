@@ -15,6 +15,8 @@
 #include "offsets.h"
 #include <cmath>
 #include <numbers>
+#include "patternScan.h"
+#include "Psapi.h";
 
 typedef enum {
 	SDL_GRAB_QUERY,
@@ -186,6 +188,9 @@ bool IsVisible(ent*& entity) {
 
 DWORD WINAPI HackThread(HMODULE hModule) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
+	unsigned char pattern[] = "\x55\x8b\xec\x83\xe4\x00\x83\xec\x00\x53\x56\x8b\xf1\x8b\x46";
+	char mask[] = "xxxxx?xx?xxxxxx";
+	uintptr_t recoilAddress = FindPattern((HMODULE)moduleBase, pattern, mask);
 
 	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
 
@@ -328,11 +333,11 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 
 		if (Config::bRecoil && !recoilPatched) {
-			mem::Patch((BYTE*)(0x462020), (BYTE*)"\xC2\x08\x00", 3);
+			mem::Patch((BYTE*)recoilAddress, (BYTE*)"\xC2\x08\x00", 3);
 			recoilPatched = true;
 		}
 		else if (!Config::bRecoil && recoilPatched) {
-			mem::Patch((BYTE*)(0x462020), (BYTE*)"\x55\x8B\xEC", 3);
+			mem::Patch((BYTE*)recoilAddress, (BYTE*)"\x55\x8B\xEC", 3);
 			recoilPatched = false;
 		}
 
