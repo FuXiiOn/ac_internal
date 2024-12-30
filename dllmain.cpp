@@ -15,7 +15,6 @@
 #include "offsets.h"
 #include <cmath>
 #include <numbers>
-#include "patternScan.h"
 #include "Psapi.h";
 
 typedef enum {
@@ -190,7 +189,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
 	unsigned char pattern[] = "\x55\x8b\xec\x83\xe4\x00\x83\xec\x00\x53\x56\x8b\xf1\x8b\x46";
 	char mask[] = "xxxxx?xx?xxxxxx";
-	uintptr_t recoilAddress = FindPattern((HMODULE)moduleBase, pattern, mask);
+	uintptr_t recoilAddress = mem::FindPattern((HMODULE)moduleBase, pattern, mask);
 
 	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
 
