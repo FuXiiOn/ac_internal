@@ -19,6 +19,24 @@ bool mem::Hook(void* toHook, void* funct, int len) {
 	return true;
 }
 
+BYTE* mem::TrampHook(BYTE* src, BYTE* dst, size_t length) {
+	if (length < 5) return 0;
+
+	BYTE* gateway = (BYTE*)VirtualAlloc(0, length, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
+	memcpy_s(gateway, length, src, length);
+
+	uintptr_t gatewayRelativeAddress = src - gateway - 5;
+
+	*(gateway + length) = 0xE9;
+
+	*(uintptr_t*)((uintptr_t)gateway + length + 1) = gatewayRelativeAddress;
+
+	mem::Hook(src, dst, length);
+
+	return gateway;
+}
+
 void mem::Patch(BYTE* dst, BYTE* src, unsigned int size)
 {
 	DWORD oldprotect;

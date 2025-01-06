@@ -168,19 +168,24 @@ bool IsVisible(ent*& entity) {
 	Vector3 from = localPlayer->headpos;
 	Vector3 to = entity->headpos;
 
-	__asm {
-		push 0; bSkipTags //a6 (unnecessary argument)
-		push 0; bCheckPlayers //a5 (unnecessary argument)
-		push localPlayer //a4
-		push to.z //vec3 dst
-		push to.y //vec3 dst
-		push to.x //vec3 dst
-		push from.z //vec3 src
-		push from.y //vec3 src
-		push from.x //vec3 src
-		lea eax, [traceresult] //a1<eax>
-		call traceLine
-		add esp, 36 //clean stack
+	__try {
+		__asm {
+			push 0; bSkipTags //a6 (unnecessary argument)
+			push 0; bCheckPlayers //a5 (unnecessary argument)
+			push localPlayer //a4
+			push to.z //vec3 dst
+			push to.y //vec3 dst
+			push to.x //vec3 dst
+			push from.z //vec3 src
+			push from.y //vec3 src
+			push from.x //vec3 src
+			lea eax, [traceresult] //a1<eax>
+			call traceLine
+			add esp, 36 //clean stack
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		return false;
 	}
 	return !traceresult.collided;
 }
@@ -202,16 +207,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	char windowTitle[] = "AssaultCube";
 	HWND hwnd = FindWindowA(NULL, windowTitle);
 
-	if (!hwnd)
-	{
-		char message[256];
-		sprintf_s(message, 256,
-			"Venom was not able to retrieve the window handle for \"%s\". Ensure you injected the DLL into the right process.\nIf this error persists, please contact the developer on Github.",
-			windowTitle);
-		MessageBoxA(NULL, message, "Unable to retrieve the window handle", MB_OK | MB_ICONERROR);
-		FreeLibraryAndExitThread(hModule, EXIT_FAILURE);
-	}
-
 	oWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWL_WNDPROC, (LONG_PTR)WndProc);
 
 	IMGUI_CHECKVERSION();
@@ -225,12 +220,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 	_SDL_WM_GrabInput = (t_SDL_WM_GrabInput)DetourFindFunction("SDL.dll", "SDL_WM_GrabInput");
 	gateway_wglSwapBuffers = (t_wglSwapBuffers)DetourFindFunction("opengl32.dll", "wglSwapBuffers");
-	if (gateway_wglSwapBuffers == NULL)
-	{
-		MessageBoxA(NULL, "Venom was not able to hook the function \"wglSwapBuffers\".\nPlease contact the developer on Github.",
-			"Unable to hook \"wglSwapBuffers\"", MB_OK | MB_ICONERROR);
-		FreeLibraryAndExitThread(hModule, EXIT_FAILURE);
-	}
+
 	DetourTransactionBegin();
 	DetourUpdateThread(GetCurrentThread());
 	DetourAttach(&(PVOID&)gateway_wglSwapBuffers, hooked_wglSwapBuffers);
@@ -242,7 +232,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
 		uintptr_t localPlayerPtr = *(uintptr_t*)(moduleBase + 0x10F4F4);
 		entList* entityList = *(entList**)(moduleBase + 0x010F4F8);
-		uintptr_t niggaList = *(uintptr_t*)(moduleBase + 0x10F4F8);
+		uintptr_t entList2 = *(uintptr_t*)(moduleBase + 0x10F4F8);
 		uintptr_t currPlayers = *(int*)(0x50F500);
 		uintptr_t gamemodeAddr = *(int*)(moduleBase + 0x10A044);
 
@@ -255,18 +245,18 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 		if (!localPlayer) continue;
 
-		if (Config::bAimbot && niggaList) {
+		if (Config::bAimbot && entList2) {
 			float closestDistance = FLT_MAX;
 			ent* closestEntity = nullptr;
 
 			static auto lastUpdateTime = std::chrono::steady_clock::now();
 
 			for (int i = 0; i < currPlayers; i++) {
-				uintptr_t entityObj = *(uintptr_t*)(niggaList + i * 0x4);
+				uintptr_t entityObj = *(uintptr_t*)(entList2 + i * 0x4);
 				ent* entity = reinterpret_cast<ent*>(entityObj);
 
 				if (!entity) continue;
-				if (entity->health <= 0) continue;
+				if (entity->health < 1) continue;
 				if (isFFA && entity->team == localPlayer->team) continue;
 				if (Config::bVisCheck && !IsVisible(entity)) continue;
 
