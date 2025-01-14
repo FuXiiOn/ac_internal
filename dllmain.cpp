@@ -15,7 +15,8 @@
 #include "offsets.h"
 #include <cmath>
 #include <numbers>
-#include "Psapi.h";
+#include "Psapi.h"
+#include "fstream"
 
 typedef enum {
 	SDL_GRAB_QUERY,
@@ -23,7 +24,7 @@ typedef enum {
 	SDL_GRAB_ON
 } SDL_GrabMode;
 typedef BOOL(__cdecl* t_SDL_WM_GrabInput)(SDL_GrabMode mode);
-t_SDL_WM_GrabInput	_SDL_WM_GrabInput;
+t_SDL_WM_GrabInput _SDL_WM_GrabInput;
 
 typedef int(__cdecl* _printInGame)(const char* format, ...);
 _printInGame printInGame = (_printInGame)(0x4090f0);
@@ -37,6 +38,9 @@ t_wglSwapBuffers gateway_wglSwapBuffers;
 const char* items[] = { "FFA", "TEAM" };
 static int triggerbot_selected = 0;
 const char* combo_preview_value = items[triggerbot_selected];
+
+char windowTitle[] = "AssaultCube";
+HWND gameHWND = FindWindowA(NULL, windowTitle);
 
 BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
@@ -130,7 +134,11 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 		ImGui::End();
 	}
 	else {
-		_SDL_WM_GrabInput(SDL_GrabMode(1));
+		if (GetForegroundWindow() == gameHWND) {
+			_SDL_WM_GrabInput(SDL_GrabMode(1));
+		} else {
+			t_SDL_WM_GrabInput(SDL_GrabMode(2));
+		}
 	}
 
 	ImGui::EndFrame();
@@ -204,10 +212,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	bool onehitPatched = false;
 	bool isFFA = false;
 
-	char windowTitle[] = "AssaultCube";
-	HWND hwnd = FindWindowA(NULL, windowTitle);
-
-	oWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWL_WNDPROC, (LONG_PTR)WndProc);
+	oWndProc = (WNDPROC)SetWindowLongPtr(gameHWND, GWL_WNDPROC, (LONG_PTR)WndProc);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -215,7 +220,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 	ImGui::StyleColorsDark();
 
-	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplWin32_Init(gameHWND);
 	ImGui_ImplOpenGL2_Init();
 
 	_SDL_WM_GrabInput = (t_SDL_WM_GrabInput)DetourFindFunction("SDL.dll", "SDL_WM_GrabInput");
@@ -235,6 +240,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		uintptr_t entList2 = *(uintptr_t*)(moduleBase + 0x10F4F8);
 		uintptr_t currPlayers = *(int*)(0x50F500);
 		uintptr_t gamemodeAddr = *(int*)(moduleBase + 0x10A044);
+		ent* crosshairEnt = getCrosshairEnt();
 
 		if (gamemodeAddr == 7 ? isFFA = true : isFFA = false);
 
@@ -376,8 +382,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		}
 
 		if (Config::bTriggerbot) {
-			ent* crosshairEnt = getCrosshairEnt();
-
 			if (triggerbot_selected == 1) {
 				if (crosshairEnt) {
 					if (localPlayer->team != crosshairEnt->team) {
