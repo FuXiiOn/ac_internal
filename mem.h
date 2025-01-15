@@ -5,6 +5,7 @@
 
 namespace mem
 {
+	extern BYTE originalBytes[10];
 	void Patch(BYTE* dst, BYTE* src, unsigned int size);
 	void Nop(BYTE* dst, unsigned int size);
 	bool Hook(void* toHook, void* funct, int len);

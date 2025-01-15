@@ -223,13 +223,12 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	ImGui_ImplWin32_Init(gameHWND);
 	ImGui_ImplOpenGL2_Init();
 
-	_SDL_WM_GrabInput = (t_SDL_WM_GrabInput)DetourFindFunction("SDL.dll", "SDL_WM_GrabInput");
-	gateway_wglSwapBuffers = (t_wglSwapBuffers)DetourFindFunction("opengl32.dll", "wglSwapBuffers");
+	uintptr_t wglSwapBuffersAddr = (uintptr_t)GetProcAddress(GetModuleHandle(L"opengl32.dll"), "wglSwapBuffers");
 
-	DetourTransactionBegin();
-	DetourUpdateThread(GetCurrentThread());
-	DetourAttach(&(PVOID&)gateway_wglSwapBuffers, hooked_wglSwapBuffers);
-	DetourTransactionCommit();
+	_SDL_WM_GrabInput = (t_SDL_WM_GrabInput)GetProcAddress(GetModuleHandle(L"SDL.dll"), "SDL_WM_GrabInput");
+	gateway_wglSwapBuffers = (t_wglSwapBuffers)wglSwapBuffersAddr;
+
+	gateway_wglSwapBuffers = (t_wglSwapBuffers)mem::TrampHook((BYTE*)gateway_wglSwapBuffers, (BYTE*)hooked_wglSwapBuffers, 5);
 
 	printInGame("\f8Venom injected!");
 
@@ -410,10 +409,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	}
 	printInGame("\f8Venom uninjected!");
 
-	DetourTransactionBegin();
-	DetourUpdateThread(GetCurrentThread());
-	DetourDetach(&(PVOID&)gateway_wglSwapBuffers, hooked_wglSwapBuffers);
-	DetourTransactionCommit();
+	mem::Patch((BYTE*)wglSwapBuffersAddr, (BYTE*)mem::originalBytes, 5);
 
 	ImGui_ImplOpenGL2_Shutdown();
 	ImGui_ImplWin32_Shutdown();
