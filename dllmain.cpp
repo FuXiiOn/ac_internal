@@ -15,6 +15,7 @@
 #include <numbers>
 #include "Psapi.h"
 #include "fstream"
+#pragma comment(lib, "opengl32.lib")
 
 typedef enum {
 	SDL_GRAB_QUERY,
