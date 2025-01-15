@@ -7,7 +7,6 @@
 #include "mem.h"
 #include <string>
 #include <thread>
-#include "hooks.h"
 #include "config.h";
 #include "detours.h"
 #include "geom.h"
@@ -410,6 +409,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	printInGame("\f8Venom uninjected!");
 
 	mem::Patch((BYTE*)wglSwapBuffersAddr, (BYTE*)mem::originalBytes, 5);
+
+	Sleep(1000);
 
 	ImGui_ImplOpenGL2_Shutdown();
 	ImGui_ImplWin32_Shutdown();
