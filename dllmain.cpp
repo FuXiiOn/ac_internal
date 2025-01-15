@@ -8,7 +8,6 @@
 #include <string>
 #include <thread>
 #include "config.h";
-#include "detours.h"
 #include "geom.h"
 #include <algorithm>
 #include "offsets.h"
