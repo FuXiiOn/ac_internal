@@ -7,7 +7,6 @@
 #define MAKE_PAD(size) STR_MERGE(_pad, __COUNTER__)[size]
 #define DEFINE_MEMBER_N(type, name, offset) struct {unsigned char MAKE_PAD(offset); type name;}
 
-
 class ent
 {
 public:
@@ -21,15 +20,16 @@ public:
 	bool isShifting; //0x006C
 	char pad_006D[139]; //0x006D
 	int32_t health; //0x00F8
-	char pad_00FC[304]; //0x00FC
-	int8_t bAttack; //0x022C
-	char pad_022D[263]; //0x022D
-	int32_t team; //0x0334
-	char pad_0338[60]; //0x0338
+	char pad_00FC[296]; //0x00FC
+	bool bAttack; //0x0224
+	char N000002B8[7]; //0x0225
+	char pad_022C[256]; //0x022C
+	int32_t team; //0x032C
+	char pad_0330[68]; //0x0330
 	class weaponClass* currWeapon; //0x0374
-	char pad_0378[3304]; //0x0378
-}; //Size: 0x1060
-static_assert(sizeof(ent) == 0x1060);
+	char pad_0378[1260]; //0x0378
+}; //Size: 0x0864
+static_assert(sizeof(ent) == 0x864);
 
 class weaponClass
 {
