@@ -15,7 +15,9 @@
 #include <numbers>
 #include "Psapi.h"
 #include "fstream"
+#include "glDraw.h"
 #pragma comment(lib, "opengl32.lib")
+#define M_PI 3.14159265358979323846
 
 typedef enum {
 	SDL_GRAB_QUERY,
@@ -48,6 +50,8 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
 
 	entList* entityList = *(entList**)(moduleBase + 0x10F4F8);
+	
+	GL::SetupOrtho();
 
 	if (GetAsyncKeyState(VK_END) & 1)
 	{
@@ -77,6 +81,10 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 				ImGui::Checkbox("Aimbot", &Config::bAimbot);
 				if (Config::bAimbot) {
 					ImGui::Checkbox("Visible Check", &Config::bVisCheck);
+					ImGui::Checkbox("FOV", &Config::bAimFov);
+					if (Config::bAimFov) {
+						ImGui::SliderFloat("FOV Radius", &Config::fovRadius, 10, 500, "%.3f");
+					}
 					ImGui::SliderFloat("Smoothness", &Config::aimbotSmooth, 0.0f, 1.0, "%.3f");
 				}
 				ImGui::Checkbox("Triggerbot", &Config::bTriggerbot);
@@ -139,6 +147,34 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			t_SDL_WM_GrabInput(SDL_GrabMode(2));
 		}
 	}
+
+	if (Config::bAimFov) {
+		int wndWidth, wndHeight;
+
+		RECT rect;
+		GetClientRect(gameHWND, &rect);
+
+		wndWidth = rect.right - rect.left;
+		wndHeight = rect.bottom - rect.top;
+
+		int centerWidth = wndWidth / 2;
+		int centerHeight = wndHeight / 2;
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glBegin(GL_LINE_LOOP);
+		for (int i = 0; i <= 50; i++) {
+			float angle = 2.0f * M_PI * i / 50;
+			float x = Config::fovRadius * cos(angle);
+			float y = Config::fovRadius * sin(angle);
+			glVertex2f(x + centerWidth, y + centerHeight);
+		}
+		glEnd();
+		glDisable(GL_BLEND);
+	}
+
+	GL::RestoreGL();
 
 	ImGui::EndFrame();
 	ImGui::Render();
@@ -249,6 +285,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 		if (!localPlayer) continue;
 
+		//add fov logic later
 		if (Config::bAimbot && entList2) {
 			float closestDistance = FLT_MAX;
 			ent* closestEntity = nullptr;

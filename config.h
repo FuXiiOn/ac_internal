@@ -14,7 +14,9 @@ namespace Config {
 	extern bool bTriggerbot;
 	extern bool bBunnyhop;
 	extern bool bVisCheck;
+	extern bool bAimFov;
 	extern float aimbotSmooth;
+	extern float fovRadius;
 
 	extern float savedXpos;
 	extern float savedYpos;
