@@ -148,7 +148,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 		}
 	}
 
-	if (Config::bAimFov) {
+	if (Config::bAimFov && !GetAsyncKeyState(VK_TAB)) {
 		int wndWidth, wndHeight;
 
 		RECT rect;
@@ -329,13 +329,14 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				auto currentTime = std::chrono::steady_clock::now();
 				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
 					float yawDiff = targetYaw + 90.0f - currentYaw;
+					float pitchDiff = targetPitch - currentPitch;
 					if (yawDiff > 180.0f) yawDiff -= 360.0f;
 					if (yawDiff < -180.0f) yawDiff += 360.0f;
 
 					float smoothingFactor = 1.1f - Config::aimbotSmooth;
 
 					currentYaw += yawDiff * smoothingFactor;
-					currentPitch += (targetPitch - currentPitch) * smoothingFactor;
+					currentPitch += pitchDiff * smoothingFactor;
 
 					localPlayer->yaw = currentYaw;
 					localPlayer->pitch = currentPitch;
