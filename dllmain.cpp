@@ -50,7 +50,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
 
 	entList* entityList = *(entList**)(moduleBase + 0x10F4F8);
-	
+
 	GL::SetupOrtho();
 
 	if (GetAsyncKeyState(VK_END) & 1)
@@ -143,7 +143,8 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	else {
 		if (GetForegroundWindow() == gameHWND) {
 			_SDL_WM_GrabInput(SDL_GrabMode(1));
-		} else {
+		}
+		else {
 			t_SDL_WM_GrabInput(SDL_GrabMode(2));
 		}
 	}
@@ -275,6 +276,10 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		uintptr_t currPlayers = *(int*)(0x50F500);
 		uintptr_t gamemodeAddr = *(int*)(moduleBase + 0x10A044);
 		ent* crosshairEnt = getCrosshairEnt();
+		RECT rect;
+		GetClientRect(gameHWND, &rect);
+		int screenWidth = rect.right - rect.left;
+		int screenHeight = rect.bottom - rect.top;
 
 		if (gamemodeAddr == 7 ? isFFA = true : isFFA = false);
 
@@ -285,10 +290,13 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 		if (!localPlayer) continue;
 
-		//add fov logic later
 		if (Config::bAimbot && entList2) {
 			float closestDistance = FLT_MAX;
 			ent* closestEntity = nullptr;
+			float bestFov = FLT_MAX;
+			float bestYaw = 0.0f, bestPitch = 0.0f;
+			float radiusDegrees = 2.0f * atan(Config::fovRadius / (screenWidth / 2.0f)) * (180.0f / M_PI);
+			float currentYaw, currentPitch;
 
 			static auto lastUpdateTime = std::chrono::steady_clock::now();
 
@@ -301,35 +309,53 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				if (isFFA && entity->team == localPlayer->team) continue;
 				if (Config::bVisCheck && !IsVisible(entity)) continue;
 
-				float deltaX = entity->bodypos.x - localPlayer->bodypos.x;
-				float deltaY = entity->bodypos.y - localPlayer->bodypos.y;
-				float deltaZ = entity->bodypos.z - localPlayer->bodypos.z;
+				float abspos_x = entity->bodypos.x - localPlayer->bodypos.x;
+				float abspos_y = entity->bodypos.y - localPlayer->bodypos.y;
+				float abspos_z = entity->bodypos.z - localPlayer->bodypos.z;
 
-				float distance = std::sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+				float distance = sqrt(abspos_x * abspos_x + abspos_y * abspos_y + abspos_z * abspos_z);
 
-				if (distance < closestDistance) {
-					closestDistance = distance;
-					closestEntity = entity;
+				float azimuth_xy = atan2f(abspos_y, abspos_x);
+				float newYaw = azimuth_xy * (180.0f / M_PI);
+
+				float azimuth_z = atan2f(abspos_z, hypot(abspos_x, abspos_y));
+				float newPitch = azimuth_z * (180.0f / M_PI);
+
+				currentYaw = localPlayer->yaw;
+				currentPitch = localPlayer->pitch;
+
+				float yawDiff = newYaw + 90.0f - currentYaw;
+				float pitchDiff = newPitch - currentPitch;
+
+				if (yawDiff > 180.0f) yawDiff -= 360.0f;
+				if (yawDiff < -180.0f) yawDiff += 360.0f;
+
+				float fov = sqrt(yawDiff * yawDiff + pitchDiff * pitchDiff);
+
+				if (Config::bAimFov) {
+					if (fov <= radiusDegrees && fov < bestFov) {
+						closestEntity = entity;
+						bestFov = fov;
+						bestYaw = newYaw + 90.0f;
+						bestPitch = newPitch;
+					}
+				}
+				else {
+					if (distance < closestDistance) {
+						closestEntity = entity;
+						closestDistance = distance;
+						bestYaw = newYaw + 90.0f;
+						bestPitch = newPitch;
+					}
 				}
 			}
 
+			auto currentTime = std::chrono::steady_clock::now();
 			if (closestEntity) {
-				float currentYaw = localPlayer->yaw;
-				float currentPitch = localPlayer->pitch;
-				float abspos_x = closestEntity->bodypos.x - localPlayer->bodypos.x;
-				float abspos_y = closestEntity->bodypos.y - localPlayer->bodypos.y;
-				float abspos_z = closestEntity->bodypos.z - localPlayer->bodypos.z;
-
-				float azimuth_xy = atan2f(abspos_y, abspos_x);
-				float targetYaw = azimuth_xy * (180.0f / std::numbers::pi);
-
-				float azimuth_z = atan2f(abspos_z, std::hypot(abspos_x, abspos_y));
-				float targetPitch = azimuth_z * (180.0f / std::numbers::pi);
-
-				auto currentTime = std::chrono::steady_clock::now();
 				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
-					float yawDiff = targetYaw + 90.0f - currentYaw;
-					float pitchDiff = targetPitch - currentPitch;
+					float yawDiff = bestYaw - currentYaw;
+					float pitchDiff = bestPitch - currentPitch;
+
 					if (yawDiff > 180.0f) yawDiff -= 360.0f;
 					if (yawDiff < -180.0f) yawDiff += 360.0f;
 
