@@ -36,12 +36,21 @@ _GetCrosshairEnt getCrosshairEnt = nullptr;
 typedef BOOL(__stdcall* t_wglSwapBuffers)(HDC hDc);
 t_wglSwapBuffers gateway_wglSwapBuffers;
 
+namespace rgb {
+	const GLubyte red[3] = { 255, 0, 0 };
+	const GLubyte green[3] = { 0, 255, 0 };
+	const GLubyte gray[3] = { 55, 55, 55 };
+	const GLubyte graylight[3] = { 192, 192, 192 };
+	const GLubyte black[3] = { 0, 0, 0 };
+}
+
 const char* items[] = { "FFA", "TEAM" };
 static int triggerbot_selected = 0;
 const char* combo_preview_value = items[triggerbot_selected];
 
 char windowTitle[] = "AssaultCube";
 HWND gameHWND = FindWindowA(NULL, windowTitle);
+int viewport[4];
 
 BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
@@ -52,6 +61,8 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	entList* entityList = *(entList**)(moduleBase + 0x10F4F8);
 
 	GL::SetupOrtho();
+
+	GL::Build(15);
 
 	if (GetAsyncKeyState(VK_END) & 1)
 	{
@@ -108,7 +119,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("ESP")) {
-				ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "soon :)");
+				ImGui::Checkbox("ESP", &Config::bEsp);
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Misc"))
@@ -146,6 +157,33 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 		}
 		else {
 			t_SDL_WM_GrabInput(SDL_GrabMode(2));
+		}
+	}
+
+	if (Config::bEsp) {
+		int* currPlayers = (int*)(0x50F500);
+		uintptr_t entityList = *(uintptr_t*)(moduleBase + 0x10F4F8);
+		float* viewMatrix = (float*)0x501AE8;
+
+		const float PLAYER_HEIGHT = 5.25f;
+		const float EYE_HEIGHT = 4.5f;
+
+		for (unsigned int i = 0; i < *currPlayers; i++) {
+			uintptr_t entityObj = *(uintptr_t*)(entityList + i * 0x4);
+			ent* entity = reinterpret_cast<ent*>(entityObj);
+
+			if (!entity) continue;
+			if (entity->health < 0) continue;
+
+			glGetIntegerv(GL_VIEWPORT, viewport);
+			Vector3 newHead = entity->headpos;
+			newHead.z = entity->headpos.z - EYE_HEIGHT + PLAYER_HEIGHT / 2;
+
+			Vector3 screenCoords;
+
+			if (GL::WorldToScreen(newHead, screenCoords, viewMatrix, viewport[2], viewport[3])) {
+				GL::DrawESPBox(entity, screenCoords);
+			}
 		}
 	}
 
