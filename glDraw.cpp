@@ -168,7 +168,7 @@ void GL::DrawHealthBar(float x, float y, float width, float height, int currentH
 	float barWidth = 5.0f;
 	float filledHeight = height * healthPercent;
 
-	GL::DrawFilledRect(x - barWidth - 2, y, barWidth, height, rgb::gray);
+	GL::DrawFilledRect(x + width + 3, y, barWidth, height, rgb::gray);
 
-	GL::DrawFilledRect(x - barWidth - 2, y + (height - filledHeight), barWidth, filledHeight, rgb::green);
+	GL::DrawFilledRect(x + width + 3, y + (height - filledHeight), barWidth, filledHeight, rgb::green);
 }
