@@ -122,6 +122,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 				ImGui::Checkbox("ESP", &Config::bEsp);
 				if (Config::bEsp) {
 					ImGui::Checkbox("Health bar", &Config::bHealthBar);
+					ImGui::Checkbox("SnapLines", &Config::bSnapLines);
 				}
 				ImGui::EndTabItem();
 			}

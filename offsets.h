@@ -10,31 +10,27 @@
 class ent
 {
 public:
-	char pad_0000[4];           // 0x0000
-	Vector3 headpos;            // 0x0004
-	char pad_0010[36];          // 0x0010
-	Vector3 bodypos;            // 0x0034
-	float yaw;                  // 0x0040
-	float pitch;                // 0x0044
-	char pad_0048[36];          // 0x0048
-	bool isShifting;            // 0x006C
-	int8_t N00000166;           // 0x006D
-	char pad_006E[138];         // 0x006E
-	int32_t health;             // 0x00F8
-	char pad_00FC[297];         // 0x00FC
-	char name[16];              // 0x0225
-	char pad_0235[27];          // 0x0235
-	bool bAttack;               // 0x0250
-	int8_t N000001A3;           // 0x0251
-	int8_t N000001C4;           // 0x0252
-	int8_t N000001B8;           // 0x0253
-	char pad_0254[216];         // 0x0254
-	int32_t team;               // 0x032C
-	char pad_0330[68];          // 0x0330
-	class weaponClass* currWeapon; // 0x0374
-	char pad_0378[312];         // 0x0378
-}; // Size: 0x04B0
-static_assert(sizeof(ent) == 0x4B0);
+	char pad_0000[4]; //0x0000
+	Vector3 headpos; //0x0004
+	char pad_0010[36]; //0x0010
+	Vector3 bodypos; //0x0034
+	float yaw; //0x0040
+	float pitch; //0x0044
+	char pad_0048[36]; //0x0048
+	bool isShifting; //0x006C
+	char pad_006D[139]; //0x006D
+	int32_t health; //0x00F8
+	char pad_00FC[296]; //0x00FC
+	bool bAttack; //0x0224
+	char name[16]; //0x0225
+	int8_t N000001C5; //0x0235
+	char pad_0236[246]; //0x0236
+	int32_t team; //0x032C
+	char pad_0330[68]; //0x0330
+	class weaponClass* currWeapon; //0x0374
+	char pad_0378[296]; //0x0378
+}; //Size: 0x04A0
+static_assert(sizeof(ent) == 0x4A0);
 
 class weaponClass
 {

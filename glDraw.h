@@ -15,6 +15,7 @@ namespace GL {
 	float centerText(float x, float width, float textWidth);
 	void Build(int height);
 	void Print(float x, float y, const GLubyte color[3], const char* format, ...);
+	void DrawSnapLine(float startX, float startY, float entityX, float entityY);
 	void DrawESPBox(ent* e, Vector3 screenCoords);
 	void DrawHealthBar(float x, float y, float width, float height, int currentHealth, int maxHealth);
 }

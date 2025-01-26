@@ -113,6 +113,17 @@ void GL::Print(float x, float y, const GLubyte color[3], const char* format, ...
 	glPopAttrib();
 }
 
+void GL::DrawSnapLine(float startX, float startY, float entityX, float entityY) {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+	glBegin(GL_LINES);
+	glVertex2f(startX, startY);
+	glVertex2f(entityX, entityY);
+	glEnd();
+	glDisable(GL_BLEND);
+}
+
 void GL::DrawESPBox(ent* e, Vector3 screenCoords) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
 	ent* localPlayer = *(ent**)(moduleBase + 0x10F4F4);
@@ -155,6 +166,12 @@ void GL::DrawESPBox(ent* e, Vector3 screenCoords) {
 
 	if (Config::bHealthBar) {
 		GL::DrawHealthBar(x, y, width, height, e->health, 100);
+	}
+
+	if (Config::bSnapLines) {
+		int screenCenterX = viewport[2] / 2;
+		int screenCenterY = viewport[3];
+		GL::DrawSnapLine(screenCenterX, screenCenterY, x + width / 2, y + height);
 	}
 
 	float textX = GL::centerText(x, width, strlen(e->name) * ESP_FONT_WIDTH);
