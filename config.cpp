@@ -12,6 +12,7 @@ bool Config::bRecoil = false;
 bool Config::bTp = false;
 bool Config::bAimbot = false;
 bool Config::bEsp = false;
+bool Config::bHealthBar = false;
 bool Config::bTriggerbot = false;
 bool Config::bBunnyhop = false;
 bool Config::bVisCheck = false;

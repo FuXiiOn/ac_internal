@@ -16,4 +16,5 @@ namespace GL {
 	void Build(int height);
 	void Print(float x, float y, const GLubyte color[3], const char* format, ...);
 	void DrawESPBox(ent* e, Vector3 screenCoords);
+	void DrawHealthBar(float x, float y, float width, float height, int currentHealth, int maxHealth);
 }

@@ -11,6 +11,7 @@ namespace Config {
 	extern bool bTp;
 	extern bool bAimbot;
 	extern bool bEsp;
+	extern bool bHealthBar;
 	extern bool bTriggerbot;
 	extern bool bBunnyhop;
 	extern bool bVisCheck;

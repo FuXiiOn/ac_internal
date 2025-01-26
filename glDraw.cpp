@@ -2,6 +2,7 @@
 #include <gl/GL.h>
 #include "geom.h"
 #include "offsets.h"
+#include "config.h"
 
 unsigned int base;
 HDC hdc = nullptr;
@@ -119,6 +120,11 @@ void GL::DrawESPBox(ent* e, Vector3 screenCoords) {
 	uintptr_t gamemodeAddr = *(int*)(moduleBase + 0x10A044);
 	bool isFFA = false;
 	if (gamemodeAddr == 7 ? isFFA = true : isFFA = false);
+	const char* window = "AssaultCube";
+	HWND hwnd = FindWindowA(0, window);
+	RECT rect;
+	GetClientRect(hwnd, &rect);
+	int VIRTUAL_SCREEN_WIDTH = rect.right - rect.left;
 
 	if (isFFA && e->team == localPlayer->team) {
 		color = rgb::green;
@@ -127,7 +133,6 @@ void GL::DrawESPBox(ent* e, Vector3 screenCoords) {
 		color = rgb::red;
 	}
 
-	const int VIRTUAL_SCREEN_WIDTH = 1280;
 	const int GAME_UNIT_MAGIC = 400;
 
 	const float PLAYER_HEIGHT = 5.25f;
@@ -148,7 +153,22 @@ void GL::DrawESPBox(ent* e, Vector3 screenCoords) {
 
 	GL::DrawOutline(x, y, width, height, 2.0f, color);
 
+	if (Config::bHealthBar) {
+		GL::DrawHealthBar(x, y, width, height, e->health, 100);
+	}
+
 	float textX = GL::centerText(x, width, strlen(e->name) * ESP_FONT_WIDTH);
 	float textY = y - ESP_FONT_WIDTH / 2;
 	GL::Print(textX, textY, color, "%s", e->name);
+}
+
+void GL::DrawHealthBar(float x, float y, float width, float height, int currentHealth, int maxHealth) {
+	float healthPercent = (float)currentHealth / maxHealth;
+	
+	float barWidth = 5.0f;
+	float filledHeight = height * healthPercent;
+
+	GL::DrawFilledRect(x - barWidth - 2, y, barWidth, height, rgb::gray);
+
+	GL::DrawFilledRect(x - barWidth - 2, y + (height - filledHeight), barWidth, filledHeight, rgb::green);
 }

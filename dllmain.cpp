@@ -120,6 +120,9 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			}
 			if (ImGui::BeginTabItem("ESP")) {
 				ImGui::Checkbox("ESP", &Config::bEsp);
+				if (Config::bEsp) {
+					ImGui::Checkbox("Health bar", &Config::bHealthBar);
+				}
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Misc"))
@@ -203,6 +206,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glBegin(GL_LINE_LOOP);
+		glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
 		for (int i = 0; i <= 50; i++) {
 			float angle = 2.0f * M_PI * i / 50;
 			float x = Config::fovRadius * cos(angle);
