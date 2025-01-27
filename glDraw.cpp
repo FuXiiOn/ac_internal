@@ -168,7 +168,7 @@ void GL::DrawESPBox(ent* e, Vector3 screenCoords) {
 		GL::DrawHealthBar(x, y, width, height, e->health, 100);
 	}
 
-	if (Config::bSnapLines) {
+	if (Config::bSnapLines && e->team != localPlayer->team) {
 		int screenCenterX = viewport[2] / 2;
 		int screenCenterY = viewport[3];
 		GL::DrawSnapLine(screenCenterX, screenCenterY, x + width / 2, y + height);
