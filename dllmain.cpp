@@ -400,8 +400,6 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 					if (yawDiff > 180.0f) yawDiff -= 360.0f;
 					if (yawDiff < -180.0f) yawDiff += 360.0f;
 
-					float fov = sqrt(yawDiff * yawDiff + pitchDiff * pitchDiff);
-
 					float smoothingFactor = std::clamp((1.0f - Config::aimbotSmooth), 0.05f, 1.0f);
 
 					currentYaw += yawDiff * smoothingFactor;
