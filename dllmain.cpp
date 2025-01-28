@@ -279,9 +279,7 @@ bool IsVisible(ent*& entity) {
 
 DWORD WINAPI HackThread(HMODULE hModule) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
-	unsigned char pattern[] = "\x55\x8b\xec\x83\xe4\x00\x83\xec\x00\x53\x56\x8b\xf1\x8b\x46";
-	char mask[] = "xxxxx?xx?xxxxxx";
-	uintptr_t recoilAddress = mem::FindPattern((HMODULE)moduleBase, pattern, mask);
+	uintptr_t recoilAddress = mem::FindPattern((HMODULE)moduleBase, (const unsigned char*)"\x55\x8b\xec\x83\xe4\x00\x83\xec\x00\x53\x56\x8b\xf1\x8b\x46", "xxxxx?xx?xxxxxx");
 
 	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
 
@@ -295,7 +293,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGuiIO& io = ImGui::GetIO();
 
 	ImGui::StyleColorsDark();
 
@@ -393,8 +391,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				}
 			}
 
-			auto currentTime = std::chrono::steady_clock::now();
 			if (closestEntity) {
+				auto currentTime = std::chrono::steady_clock::now();
 				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
 					float yawDiff = bestYaw - currentYaw;
 					float pitchDiff = bestPitch - currentPitch;
@@ -402,7 +400,9 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 					if (yawDiff > 180.0f) yawDiff -= 360.0f;
 					if (yawDiff < -180.0f) yawDiff += 360.0f;
 
-					float smoothingFactor = 1.1f - Config::aimbotSmooth;
+					float fov = sqrt(yawDiff * yawDiff + pitchDiff * pitchDiff);
+
+					float smoothingFactor = std::clamp((1.0f - Config::aimbotSmooth) * (fov / radiusDegrees), 0.05f, 1.0f);
 
 					currentYaw += yawDiff * smoothingFactor;
 					currentPitch += pitchDiff * smoothingFactor;

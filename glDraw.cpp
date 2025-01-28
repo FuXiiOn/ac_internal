@@ -170,7 +170,7 @@ void GL::DrawESPBox(ent* e, Vector3 screenCoords) {
 
 	if (Config::bSnapLines && e->team != localPlayer->team) {
 		int screenCenterX = viewport[2] / 2;
-		int screenCenterY = viewport[3];
+		int screenCenterY = viewport[3] - 10;
 		GL::DrawSnapLine(screenCenterX, screenCenterY, x + width / 2, y + height);
 	}
 
