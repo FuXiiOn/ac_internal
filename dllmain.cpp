@@ -402,7 +402,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
 					float fov = sqrt(yawDiff * yawDiff + pitchDiff * pitchDiff);
 
-					float smoothingFactor = std::clamp((1.0f - Config::aimbotSmooth) * (fov / radiusDegrees), 0.05f, 1.0f);
+					float smoothingFactor = std::clamp((1.0f - Config::aimbotSmooth), 0.05f, 1.0f);
 
 					currentYaw += yawDiff * smoothingFactor;
 					currentPitch += pitchDiff * smoothingFactor;
