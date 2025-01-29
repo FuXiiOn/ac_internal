@@ -51,6 +51,7 @@ const char* combo_preview_value = items[triggerbot_selected];
 char windowTitle[] = "AssaultCube";
 HWND gameHWND = FindWindowA(NULL, windowTitle);
 int viewport[4];
+BYTE originalSilentBytes[10];
 
 BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
@@ -307,6 +308,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
 	uintptr_t recoilAddress = mem::FindPattern((HMODULE)moduleBase, (const unsigned char*)"\x55\x8b\xec\x83\xe4\x00\x83\xec\x00\x53\x56\x8b\xf1\x8b\x46", "xxxxx?xx?xxxxxx");
 	uintptr_t silentAimAddr = (moduleBase + 0x637B6);
+	memcpy(originalSilentBytes, (BYTE*)silentAimAddr, 5);
 	oSilentAddr = silentAimAddr + 5;
 
 	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
@@ -329,6 +331,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	ImGui_ImplOpenGL2_Init();
 
 	uintptr_t wglSwapBuffersAddr = (uintptr_t)GetProcAddress(GetModuleHandle(L"opengl32.dll"), "wglSwapBuffers");
+	BYTE originalSwapBuffersBytes[10];
+	memcpy(originalSwapBuffersBytes, (BYTE*)wglSwapBuffersAddr, 5);
 	oSilentAddr = (uintptr_t)mem::TrampHook((BYTE*)silentAimAddr, (BYTE*)hookedSilent, 5);
 	silentContinue = oSilentAddr + 4;
 
@@ -555,7 +559,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	}
 	printInGame("\f8Venom uninjected!");
 
-	mem::Patch((BYTE*)wglSwapBuffersAddr, (BYTE*)mem::originalBytes, 5);
+	mem::Patch((BYTE*)silentAimAddr, (BYTE*)originalSilentBytes, 5);
+	mem::Patch((BYTE*)wglSwapBuffersAddr, (BYTE*)originalSwapBuffersBytes, 5);
 
 	Sleep(1000);
 

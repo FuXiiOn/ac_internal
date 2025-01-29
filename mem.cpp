@@ -3,8 +3,6 @@
 #include <Windows.h>
 #include <Psapi.h>
 
-BYTE mem::originalBytes[10];
-
 bool mem::Hook(void* toHook, void* funct, int len) {
 	if (len < 5) return false;
 
@@ -23,8 +21,6 @@ bool mem::Hook(void* toHook, void* funct, int len) {
 
 BYTE* mem::TrampHook(BYTE* src, BYTE* dst, size_t length) {
 	if (length < 5) return 0;
-
-	memcpy(originalBytes, src, 5);
 
 	BYTE* gateway = (BYTE*)VirtualAlloc(0, length, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
