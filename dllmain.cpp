@@ -51,6 +51,7 @@ const char* combo_preview_value = items[triggerbot_selected];
 char windowTitle[] = "AssaultCube";
 HWND gameHWND = FindWindowA(NULL, windowTitle);
 int viewport[4];
+ent* closestSilent = nullptr;
 BYTE originalSilentBytes[10];
 
 BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
@@ -193,7 +194,44 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 		}
 	}
 
-	if (Config::bAimFov && !GetAsyncKeyState(VK_TAB)) {
+	if (Config::bSilent) {
+		if (closestSilent) {
+			Vector3 screenCoords;
+			float* viewMatrix = (float*)0x501AE8;
+
+			bool isVisible = GL::WorldToScreen(closestSilent->headpos, screenCoords, viewMatrix, viewport[2], viewport[3]);
+
+			if (!isVisible) {
+				Vector3 camSpace;
+				camSpace.x = closestSilent->headpos.x * viewMatrix[0] + closestSilent->headpos.y * viewMatrix[4] + closestSilent->headpos.z * viewMatrix[8] + viewMatrix[12];
+				camSpace.y = closestSilent->headpos.x * viewMatrix[1] + closestSilent->headpos.y * viewMatrix[5] + closestSilent->headpos.z * viewMatrix[9] + viewMatrix[13];
+				camSpace.z = closestSilent->headpos.x * viewMatrix[2] + closestSilent->headpos.y * viewMatrix[6] + closestSilent->headpos.z * viewMatrix[10] + viewMatrix[14];
+
+				// Normalize direction
+				float length = sqrt(camSpace.x * camSpace.x + camSpace.y * camSpace.y );
+				camSpace.x /= length;
+				camSpace.y /= length;
+
+				// Scale it to the screen edge
+				float edgeDistance = viewport[2] * 0.75f;  // Move it out of view
+				screenCoords.x = (viewport[2] / 2) + camSpace.x * edgeDistance;
+				screenCoords.y = (viewport[3] / 2) - camSpace.y * edgeDistance;
+			}
+
+				glGetIntegerv(GL_VIEWPORT, viewport);
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+				glBegin(GL_LINES);
+				glVertex2f(viewport[2] / 2, viewport[3] / 2);
+				glVertex2f(screenCoords.x, screenCoords.y);
+				glEnd();
+				glDisable(GL_BLEND);
+			
+		}
+	}
+
+	if (Config::bAimFov) {
 		int wndWidth, wndHeight;
 
 		RECT rect;
@@ -279,7 +317,6 @@ bool IsVisible(ent*& entity) {
 	return !traceresult.collided;
 }
 
-ent* closestSilent = nullptr;
 uintptr_t oSilentAddr = 0;
 uintptr_t silentContinue = 0;
 
@@ -409,7 +446,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				float fov = sqrt(yawDiff * yawDiff + pitchDiff * pitchDiff);
 
 				if (Config::bAimFov) {
-					if (fov <= radiusDegrees && fov < bestFov) {
+					if (fov < radiusDegrees && fov < bestFov) {
 						closestEntity = entity;
 						bestSilent = entity;
 						bestFov = fov;
