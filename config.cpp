@@ -11,6 +11,7 @@ bool Config::bRapidFire = false;
 bool Config::bRecoil = false;
 bool Config::bTp = false;
 bool Config::bAimbot = false;
+bool Config::bSilent = false;
 bool Config::bEsp = false;
 bool Config::bHealthBar = false;
 bool Config::bSnapLines = false;

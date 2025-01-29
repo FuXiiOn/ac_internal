@@ -91,6 +91,7 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			if (ImGui::BeginTabItem("Aim")) {
 				ImGui::Checkbox("Aimbot", &Config::bAimbot);
 				if (Config::bAimbot) {
+					ImGui::Checkbox("Silent Aim", &Config::bSilent);
 					ImGui::Checkbox("Visible Check", &Config::bVisCheck);
 					ImGui::Checkbox("FOV", &Config::bAimFov);
 					if (Config::bAimFov) {
@@ -277,9 +278,36 @@ bool IsVisible(ent*& entity) {
 	return !traceresult.collided;
 }
 
+ent* closestSilent = nullptr;
+uintptr_t oSilentAddr = 0;
+uintptr_t silentContinue = 0;
+
+void __declspec(naked) hookedSilent() {
+	static auto old_eax = 0;
+
+	__asm {
+		cmp Config::bSilent,0
+		je exit_hook
+
+		mov old_eax, eax
+		mov eax, [closestSilent]
+		cmp eax, 0
+		je exit_hook
+		add eax, 4
+		mov ecx, eax
+		mov eax, [old_eax]
+		jmp silentContinue
+
+	exit_hook:
+		jmp oSilentAddr
+	}
+}
+
 DWORD WINAPI HackThread(HMODULE hModule) {
 	uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
 	uintptr_t recoilAddress = mem::FindPattern((HMODULE)moduleBase, (const unsigned char*)"\x55\x8b\xec\x83\xe4\x00\x83\xec\x00\x53\x56\x8b\xf1\x8b\x46", "xxxxx?xx?xxxxxx");
+	uintptr_t silentAimAddr = (moduleBase + 0x637B6);
+	oSilentAddr = silentAimAddr + 5;
 
 	getCrosshairEnt = (_GetCrosshairEnt)(moduleBase + 0x607C0);
 
@@ -301,6 +329,8 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 	ImGui_ImplOpenGL2_Init();
 
 	uintptr_t wglSwapBuffersAddr = (uintptr_t)GetProcAddress(GetModuleHandle(L"opengl32.dll"), "wglSwapBuffers");
+	oSilentAddr = (uintptr_t)mem::TrampHook((BYTE*)silentAimAddr, (BYTE*)hookedSilent, 5);
+	silentContinue = oSilentAddr + 4;
 
 	_SDL_WM_GrabInput = (t_SDL_WM_GrabInput)GetProcAddress(GetModuleHandle(L"SDL.dll"), "SDL_WM_GrabInput");
 	gateway_wglSwapBuffers = (t_wglSwapBuffers)wglSwapBuffersAddr;
@@ -376,6 +406,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				if (Config::bAimFov) {
 					if (fov <= radiusDegrees && fov < bestFov) {
 						closestEntity = entity;
+						closestSilent = entity;
 						bestFov = fov;
 						bestYaw = newYaw + 90.0f;
 						bestPitch = newPitch;
@@ -384,6 +415,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				else {
 					if (distance < closestDistance) {
 						closestEntity = entity;
+						closestSilent = entity;
 						closestDistance = distance;
 						bestYaw = newYaw + 90.0f;
 						bestPitch = newPitch;
@@ -392,23 +424,26 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 			}
 
 			if (closestEntity) {
-				auto currentTime = std::chrono::steady_clock::now();
-				if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
-					float yawDiff = bestYaw - currentYaw;
-					float pitchDiff = bestPitch - currentPitch;
+				if (!Config::bSilent) {
 
-					if (yawDiff > 180.0f) yawDiff -= 360.0f;
-					if (yawDiff < -180.0f) yawDiff += 360.0f;
+					auto currentTime = std::chrono::steady_clock::now();
+					if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
+						float yawDiff = bestYaw - currentYaw;
+						float pitchDiff = bestPitch - currentPitch;
 
-					float smoothingFactor = std::clamp((1.0f - Config::aimbotSmooth), 0.05f, 1.0f);
+						if (yawDiff > 180.0f) yawDiff -= 360.0f;
+						if (yawDiff < -180.0f) yawDiff += 360.0f;
 
-					currentYaw += yawDiff * smoothingFactor;
-					currentPitch += pitchDiff * smoothingFactor;
+						float smoothingFactor = std::clamp((1.0f - Config::aimbotSmooth), 0.05f, 1.0f);
 
-					localPlayer->yaw = currentYaw;
-					localPlayer->pitch = currentPitch;
+						currentYaw += yawDiff * smoothingFactor;
+						currentPitch += pitchDiff * smoothingFactor;
 
-					lastUpdateTime = currentTime;
+						localPlayer->yaw = currentYaw;
+						localPlayer->pitch = currentPitch;
+
+						lastUpdateTime = currentTime;
+					}
 				}
 			}
 		}
