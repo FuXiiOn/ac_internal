@@ -202,20 +202,18 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 			bool isVisible = GL::WorldToScreen(closestSilent->headpos, screenCoords, viewMatrix, viewport[2], viewport[3]);
 
 			if (!isVisible) {
-				Vector3 camSpace;
-				camSpace.x = closestSilent->headpos.x * viewMatrix[0] + closestSilent->headpos.y * viewMatrix[4] + closestSilent->headpos.z * viewMatrix[8] + viewMatrix[12];
-				camSpace.y = closestSilent->headpos.x * viewMatrix[1] + closestSilent->headpos.y * viewMatrix[5] + closestSilent->headpos.z * viewMatrix[9] + viewMatrix[13];
-				camSpace.z = closestSilent->headpos.x * viewMatrix[2] + closestSilent->headpos.y * viewMatrix[6] + closestSilent->headpos.z * viewMatrix[10] + viewMatrix[14];
+				Vector3 camCoords;
+				camCoords.x = closestSilent->headpos.x * viewMatrix[0] + closestSilent->headpos.y * viewMatrix[4] + closestSilent->headpos.z * viewMatrix[8] + viewMatrix[12];
+				camCoords.y = closestSilent->headpos.x * viewMatrix[1] + closestSilent->headpos.y * viewMatrix[5] + closestSilent->headpos.z * viewMatrix[9] + viewMatrix[13];
+				camCoords.z = closestSilent->headpos.x * viewMatrix[2] + closestSilent->headpos.y * viewMatrix[6] + closestSilent->headpos.z * viewMatrix[10] + viewMatrix[14];
 
-				// Normalize direction
-				float length = sqrt(camSpace.x * camSpace.x + camSpace.y * camSpace.y );
-				camSpace.x /= length;
-				camSpace.y /= length;
+				float length = sqrt(camCoords.x * camCoords.x + camCoords.y * camCoords.y);
+				camCoords.x /= length;
+				camCoords.y /= length;
 
-				// Scale it to the screen edge
-				float edgeDistance = viewport[2] * 0.75f;  // Move it out of view
-				screenCoords.x = (viewport[2] / 2) + camSpace.x * edgeDistance;
-				screenCoords.y = (viewport[3] / 2) - camSpace.y * edgeDistance;
+				float edgeDistance = viewport[2] * 0.75;
+				screenCoords.x = (viewport[2] / 2) + camCoords.x * edgeDistance;
+				screenCoords.y = (viewport[3] / 2) - camCoords.y * edgeDistance;
 			}
 
 				glGetIntegerv(GL_VIEWPORT, viewport);
@@ -227,7 +225,6 @@ BOOL __stdcall hooked_wglSwapBuffers(HDC hDc) {
 				glVertex2f(screenCoords.x, screenCoords.y);
 				glEnd();
 				glDisable(GL_BLEND);
-			
 		}
 	}
 
