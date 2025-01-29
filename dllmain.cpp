@@ -283,7 +283,7 @@ uintptr_t oSilentAddr = 0;
 uintptr_t silentContinue = 0;
 
 void __declspec(naked) hookedSilent() {
-	static auto old_eax = 0;
+	static uintptr_t old_eax = 0;
 
 	__asm {
 		cmp Config::bSilent,0
@@ -364,6 +364,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		if (Config::bAimbot && entList2) {
 			float closestDistance = FLT_MAX;
 			ent* closestEntity = nullptr;
+			closestSilent = nullptr;
 			float bestFov = FLT_MAX;
 			float bestYaw = 0.0f, bestPitch = 0.0f;
 			float radiusDegrees = 2.0f * atan(Config::fovRadius / (screenWidth / 2.0f)) * (180.0f / M_PI);
