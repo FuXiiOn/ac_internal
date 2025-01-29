@@ -364,7 +364,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 		if (Config::bAimbot && entList2) {
 			float closestDistance = FLT_MAX;
 			ent* closestEntity = nullptr;
-			closestSilent = nullptr;
+			ent* bestSilent = nullptr;
 			float bestFov = FLT_MAX;
 			float bestYaw = 0.0f, bestPitch = 0.0f;
 			float radiusDegrees = 2.0f * atan(Config::fovRadius / (screenWidth / 2.0f)) * (180.0f / M_PI);
@@ -407,7 +407,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				if (Config::bAimFov) {
 					if (fov <= radiusDegrees && fov < bestFov) {
 						closestEntity = entity;
-						closestSilent = entity;
+						bestSilent = entity;
 						bestFov = fov;
 						bestYaw = newYaw + 90.0f;
 						bestPitch = newPitch;
@@ -416,7 +416,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				else {
 					if (distance < closestDistance) {
 						closestEntity = entity;
-						closestSilent = entity;
+						bestSilent = entity;
 						closestDistance = distance;
 						bestYaw = newYaw + 90.0f;
 						bestPitch = newPitch;
@@ -424,9 +424,15 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 				}
 			}
 
+			if(bestSilent) {
+				closestSilent = bestSilent;
+			}
+			else {
+				closestSilent = nullptr;
+			}
+
 			if (closestEntity) {
 				if (!Config::bSilent) {
-
 					auto currentTime = std::chrono::steady_clock::now();
 					if (currentTime - lastUpdateTime >= std::chrono::milliseconds(7)) {
 						float yawDiff = bestYaw - currentYaw;
